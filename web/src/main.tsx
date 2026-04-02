@@ -1,11 +1,14 @@
-import { createRoot } from "react-dom/client"
+import { createRoot } from "react-dom/client";
 
-import "./index.css"
-import App from "./App.tsx"
-import { ThemeProvider } from "@/components/theme-provider.tsx"
+import "./index.css";
+import { TRPCProvider } from "@/api/provider.tsx";
+import { ThemeProvider } from "@/components/theme-provider.tsx";
+import App from "./App.tsx";
 
 createRoot(document.getElementById("root")!).render(
-  <ThemeProvider>
-    <App />
-  </ThemeProvider>
-)
+	<TRPCProvider>
+		<ThemeProvider>
+			<App />
+		</ThemeProvider>
+	</TRPCProvider>,
+);
