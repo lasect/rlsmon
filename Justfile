@@ -149,13 +149,13 @@ fmt:
 # Show database configuration
 config:
     @echo "Database Configuration:"
-    @echo "Host: localhost:5433"
+    @echo "Host: localhost:6923"
     @echo "Database: rlsmon_test"
     @echo "Username: rlsmon"
     @echo "Password: test"
     @echo ""
     @echo "Connection string:"
-    @echo "postgres://rlsmon:test@localhost:5433/rlsmon_test"
+    @echo "postgres://rlsmon:test@localhost:6923/rlsmon_test"
 
 # Export schema to file
 export-schema:
@@ -196,4 +196,4 @@ help:
     @echo "just db-migrate      - Run migrations only"
     @echo ""
     @echo "Connection String:"
-    @echo "postgres://rlsmon:test@localhost:5433/rlsmon_test"
+    @echo "postgres://rlsmon:test@localhost:6923/rlsmon_test"
