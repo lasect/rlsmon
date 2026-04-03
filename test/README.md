@@ -31,7 +31,7 @@ just db:seed:enterprise # Full stress test
 ## Connection
 
 ```
-postgresql://rlsmon:test@localhost:5433/rlsmon_test
+postgresql://rlsmon:test@localhost:6923/rlsmon_test
 ```
 
 ## RLS Scenarios Covered

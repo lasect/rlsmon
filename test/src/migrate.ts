@@ -4,7 +4,7 @@ import postgres from "postgres";
 
 const DATABASE_URL =
 	process.env.DATABASE_URL ||
-	"postgres://rlsmon:test@localhost:5433/rlsmon_test";
+	"postgres://rlsmon:test@localhost:6923/rlsmon_test";
 
 async function migrate() {
 	const sql = postgres(DATABASE_URL);

@@ -13,5 +13,5 @@ fi
 
 echo "🚀 Starting RLSMon with test database..."
 cd "$PROJECT_ROOT"
-export DATABASE_URL="postgres://rlsmon:test@localhost:5433/rlsmon_test"
+export DATABASE_URL="postgres://rlsmon:test@localhost:6923/rlsmon_test"
 exec bun run src/index.ts "$@"
