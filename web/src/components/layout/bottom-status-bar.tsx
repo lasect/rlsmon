@@ -1,29 +1,18 @@
 import { User } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
-interface BottomStatusBarProps {
-	persona?: {
-		name: string;
-		role?: string;
-	} | null;
-}
-
-export function BottomStatusBar({ persona }: BottomStatusBarProps) {
-	if (!persona) {
-		return null;
-	}
-
+export function BottomStatusBar() {
 	return (
-		<footer className="flex h-8 items-center border-border border-t bg-muted/50 px-4">
-			<div className="flex items-center gap-2 text-muted-foreground text-xs">
-				<User className="size-3 shrink-0" />
-				<span>Persona:</span>
-				<span className="font-medium text-foreground">{persona.name}</span>
-				{persona.role && (
-					<>
-						<span className="text-muted-foreground/50">|</span>
-						<span>{persona.role}</span>
-					</>
-				)}
+		<footer className="flex h-7 items-center justify-between border-border border-t bg-muted/30 px-3">
+			<div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+				<div className="flex items-center gap-1.5">
+					<User className="size-3 shrink-0" />
+					<span>no persona</span>
+				</div>
+			</div>
+			<div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+				<Separator orientation="vertical" className="h-3" />
+				<span>pg</span>
 			</div>
 		</footer>
 	);

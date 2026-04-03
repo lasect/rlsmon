@@ -64,11 +64,13 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
 		<Link
 			to={item.href}
 			className={cn(
-				"flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted",
-				isActive && "bg-muted font-medium",
+				"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+				isActive &&
+					"border-sidebar-primary border-l-2 bg-sidebar-accent pl-[6px] font-medium text-sidebar-accent-foreground",
+				!isActive && "border-transparent border-l-2",
 			)}
 		>
-			<item.icon className="size-4 shrink-0" />
+			<item.icon className="size-3.5 shrink-0" />
 			<span>{item.label}</span>
 		</Link>
 	);
@@ -78,19 +80,19 @@ export function Sidebar() {
 	const location = useLocation();
 
 	return (
-		<aside className="flex h-full w-56 flex-col border-border border-r bg-sidebar">
-			<div className="flex h-12 items-center border-sidebar-border border-b px-4">
-				<span className="font-mono font-semibold text-sm tracking-tight">
+		<aside className="flex h-full w-48 flex-col border-border border-r bg-sidebar">
+			<div className="flex h-10 items-center border-sidebar-border border-b px-3">
+				<span className="font-mono font-semibold text-sidebar-foreground text-xs tracking-tight">
 					RLSMon
 				</span>
 			</div>
-			<nav className="flex-1 overflow-y-auto p-3">
+			<nav className="flex-1 overflow-y-auto px-2 py-2">
 				{navGroups.map((group) => (
-					<div key={group.label} className="mb-4">
-						<div className="mb-1.5 px-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+					<div key={group.label} className="mb-3">
+						<div className="mb-1 px-2 font-medium text-[10px] text-sidebar-foreground/40 uppercase tracking-wider">
 							{group.label}
 						</div>
-						<div className="space-y-0.5">
+						<div className="space-y-px">
 							{group.items.map((item) => (
 								<NavLink
 									key={item.href}
@@ -102,15 +104,18 @@ export function Sidebar() {
 					</div>
 				))}
 			</nav>
-			<div className="border-sidebar-border border-t p-3">
+			<div className="border-sidebar-border border-t p-2">
 				<Link
 					to="/settings"
 					className={cn(
-						"flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted",
-						location.pathname === "/settings" && "bg-muted font-medium",
+						"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+						location.pathname === "/settings" &&
+							"border-sidebar-primary border-l-2 bg-sidebar-accent pl-[6px] font-medium text-sidebar-accent-foreground",
+						location.pathname !== "/settings" &&
+							"border-transparent border-l-2",
 					)}
 				>
-					<Settings className="size-4 shrink-0" />
+					<Settings className="size-3.5 shrink-0" />
 					<span>Settings</span>
 				</Link>
 			</div>

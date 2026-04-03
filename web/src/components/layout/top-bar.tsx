@@ -1,30 +1,33 @@
-import { Circle } from "lucide-react";
+import { Circle, Database } from "lucide-react";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-interface TopBarProps {
-	connectionString?: string;
-	isConnected?: boolean;
-}
-
-export function TopBar({
-	connectionString = "Not connected",
-	isConnected = false,
-}: TopBarProps) {
+export function TopBar() {
 	return (
-		<header className="flex h-12 items-center justify-between border-border border-b bg-background px-4">
+		<header className="flex h-10 items-center justify-between border-border border-b bg-background px-4">
 			<div className="flex items-center gap-2">
-				<span className="font-medium text-sm">{connectionString}</span>
+				<Database className="size-3.5 text-muted-foreground" />
+				<span className="font-mono text-muted-foreground text-xs">
+					localhost:5432
+				</span>
 			</div>
-			<div className="flex items-center gap-2">
-				<Circle
-					className="size-2 shrink-0"
-					fill={isConnected ? "currentColor" : "none"}
-					stroke={isConnected ? "none" : "currentColor"}
-					strokeWidth={2}
-					data-connected={isConnected}
-					style={{
-						color: isConnected ? "var(--chart-2)" : "var(--muted-foreground)",
-					}}
-				/>
+			<div className="flex items-center gap-3">
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<div className="flex items-center gap-1.5">
+							<Circle
+								className="size-2 shrink-0"
+								fill="currentColor"
+								style={{ color: "var(--rls-grant)" }}
+							/>
+							<span className="text-muted-foreground text-xs">connected</span>
+						</div>
+					</TooltipTrigger>
+					<TooltipContent side="bottom">Connected to database</TooltipContent>
+				</Tooltip>
 			</div>
 		</header>
 	);
