@@ -11,7 +11,7 @@ import {
 	Shield,
 	Users,
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -61,8 +61,8 @@ const navGroups: NavGroup[] = [
 
 function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
 	return (
-		<a
-			href={item.href}
+		<Link
+			to={item.href}
 			className={cn(
 				"flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted",
 				isActive && "bg-muted font-medium",
@@ -70,7 +70,7 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
 		>
 			<item.icon className="size-4 shrink-0" />
 			<span>{item.label}</span>
-		</a>
+		</Link>
 	);
 }
 
@@ -103,8 +103,8 @@ export function Sidebar() {
 				))}
 			</nav>
 			<div className="border-sidebar-border border-t p-3">
-				<a
-					href="/settings"
+				<Link
+					to="/settings"
 					className={cn(
 						"flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted",
 						location.pathname === "/settings" && "bg-muted font-medium",
@@ -112,7 +112,7 @@ export function Sidebar() {
 				>
 					<Settings className="size-4 shrink-0" />
 					<span>Settings</span>
-				</a>
+				</Link>
 			</div>
 		</aside>
 	);
