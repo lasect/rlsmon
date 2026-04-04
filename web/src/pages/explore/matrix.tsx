@@ -2,6 +2,7 @@ import { Check, LayoutGrid, List, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "@/api/trpc";
+import { ApiErrorCard } from "@/components/api-error-card";
 import { CommandBadge } from "@/components/command-badge";
 import { FilterBar } from "@/components/filter-bar";
 import { SlideOver } from "@/components/slide-over";
@@ -16,7 +17,7 @@ type MatrixFilter = "all" | "grants" | "denies" | "risky";
 type MatrixView = "grid" | "list";
 
 export function MatrixPage() {
-	const { data, isLoading, error } = trpc.matrix.get.useQuery();
+	const { data, isLoading, error, refetch } = trpc.matrix.get.useQuery();
 	const { data: policiesData } = trpc.policies.list.useQuery();
 	const rolesData = trpc.roles.list.useQuery().data;
 	const [search, setSearch] = useState("");
@@ -44,9 +45,11 @@ export function MatrixPage() {
 
 	if (error) {
 		return (
-			<div className="flex h-full items-center justify-center">
-				<div className="text-destructive text-xs">Error: {error.message}</div>
-			</div>
+			<ApiErrorCard
+				error={error}
+				retry={() => refetch()}
+				endpoint="/api/matrix"
+			/>
 		);
 	}
 

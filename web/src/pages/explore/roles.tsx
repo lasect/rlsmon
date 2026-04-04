@@ -2,6 +2,7 @@ import { Crown, LayoutGrid, LogIn, Play, Shield, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "@/api/trpc";
+import { ApiErrorCard } from "@/components/api-error-card";
 import { FilterBar } from "@/components/filter-bar";
 import { InheritanceTree } from "@/components/role/inheritance-tree";
 import { RolePermissionsHeatmap } from "@/components/role/permissions-heatmap";
@@ -12,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 export function RolesPage() {
-	const { data, isLoading, error } = trpc.roles.list.useQuery();
+	const { data, isLoading, error, refetch } = trpc.roles.list.useQuery();
 	const matrix = trpc.matrix.get.useQuery().data ?? [];
 	const policies = trpc.policies.list.useQuery().data ?? [];
 	const [search, setSearch] = useState("");
@@ -29,9 +30,11 @@ export function RolesPage() {
 
 	if (error) {
 		return (
-			<div className="flex h-full items-center justify-center">
-				<div className="text-destructive text-xs">Error: {error.message}</div>
-			</div>
+			<ApiErrorCard
+				error={error}
+				retry={() => refetch()}
+				endpoint="/api/roles"
+			/>
 		);
 	}
 

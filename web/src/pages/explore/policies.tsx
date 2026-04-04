@@ -1,6 +1,7 @@
 import { Shield, Users } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/api/trpc";
+import { ApiErrorCard } from "@/components/api-error-card";
 import { CodeBlock } from "@/components/code-block";
 import { CommandBadge } from "@/components/command-badge";
 import { FilterBar } from "@/components/filter-bar";
@@ -10,7 +11,7 @@ import { cn } from "@/lib/utils";
 type PolicyGroupBy = "table" | "command" | "none";
 
 export function PoliciesPage() {
-	const { data, isLoading, error } = trpc.policies.list.useQuery();
+	const { data, isLoading, error, refetch } = trpc.policies.list.useQuery();
 	const [search, setSearch] = useState("");
 	const [selectedName, setSelectedName] = useState<string | null>(null);
 	const [groupBy, setGroupBy] = useState<PolicyGroupBy>("table");
@@ -25,9 +26,11 @@ export function PoliciesPage() {
 
 	if (error) {
 		return (
-			<div className="flex h-full items-center justify-center">
-				<div className="text-destructive text-xs">Error: {error.message}</div>
-			</div>
+			<ApiErrorCard
+				error={error}
+				retry={() => refetch()}
+				endpoint="/api/policies"
+			/>
 		);
 	}
 
