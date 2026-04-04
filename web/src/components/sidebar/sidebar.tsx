@@ -64,10 +64,10 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
 		<Link
 			to={item.href}
 			className={cn(
-				"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+				"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] transition-colors hover:bg-primary/5 hover:text-sidebar-foreground",
 				isActive &&
-					"border-sidebar-primary border-l-2 bg-sidebar-accent pl-[6px] font-medium text-sidebar-accent-foreground",
-				!isActive && "border-transparent border-l-2",
+					"border-primary border-l-2 bg-primary/10 pl-[6px] font-medium text-sidebar-primary",
+				!isActive && "border-transparent border-l-2 text-sidebar-foreground/70",
 			)}
 		>
 			<item.icon className="size-3.5 shrink-0" />
@@ -89,7 +89,7 @@ export function Sidebar() {
 			<nav className="flex-1 overflow-y-auto px-2 py-2">
 				{navGroups.map((group) => (
 					<div key={group.label} className="mb-3">
-						<div className="mb-1 px-2 font-medium text-[10px] text-sidebar-foreground/40 uppercase tracking-wider">
+						<div className="mb-1 px-2 font-medium text-[10px] text-sidebar-foreground/30 uppercase tracking-wider">
 							{group.label}
 						</div>
 						<div className="space-y-px">
@@ -108,9 +108,9 @@ export function Sidebar() {
 				<Link
 					to="/settings"
 					className={cn(
-						"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+						"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] text-sidebar-foreground/70 transition-colors hover:bg-primary/5 hover:text-sidebar-foreground",
 						location.pathname === "/settings" &&
-							"border-sidebar-primary border-l-2 bg-sidebar-accent pl-[6px] font-medium text-sidebar-accent-foreground",
+							"border-primary border-l-2 bg-primary/10 pl-[6px] font-medium text-sidebar-primary",
 						location.pathname !== "/settings" &&
 							"border-transparent border-l-2",
 					)}
