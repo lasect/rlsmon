@@ -64,7 +64,7 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
 		<Link
 			to={item.href}
 			className={cn(
-				"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] transition-colors hover:bg-primary/5 hover:text-sidebar-foreground",
+				"flex items-center gap-2 rounded-md px-0.5 py-1 text-[12px] transition-colors hover:bg-primary/5 hover:text-sidebar-foreground",
 				isActive &&
 					"border-primary border-l-2 bg-primary/10 pl-[6px] font-medium text-sidebar-primary",
 				!isActive && "border-transparent border-l-2 text-sidebar-foreground/70",
@@ -89,7 +89,7 @@ export function Sidebar() {
 			<nav className="flex-1 overflow-y-auto px-2 py-2">
 				{navGroups.map((group) => (
 					<div key={group.label} className="mb-3">
-						<div className="mb-1 px-2 font-medium text-[10px] text-sidebar-foreground/30 uppercase tracking-wider">
+						<div className="mb-1 pl-1 font-medium text-[10px] text-sidebar-foreground/30 uppercase tracking-wider">
 							{group.label}
 						</div>
 						<div className="space-y-px">
