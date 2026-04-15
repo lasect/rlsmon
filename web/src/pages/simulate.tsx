@@ -7,6 +7,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { trpc } from "@/api/trpc";
 import { ApiErrorCard } from "@/components/api-error-card";
 import { CellRenderer } from "@/components/simulate/json-cell";
@@ -68,6 +69,7 @@ function saveConfig(config: SimulateConfig): void {
 
 export function SimulatePage() {
 	const { setPersona } = usePersona();
+	const [searchParams] = useSearchParams();
 	const [selectedRole, setSelectedRole] = useState<string>("");
 	const [selectedTable, setSelectedTable] = useState<string>("");
 	const [jwtClaims, setJwtClaims] = useState<JwtClaim[]>([
@@ -97,6 +99,13 @@ export function SimulatePage() {
 			}
 		}
 	}, []);
+
+	useEffect(() => {
+		const tableParam = searchParams.get("table");
+		if (tableParam) {
+			setSelectedTable(tableParam);
+		}
+	}, [searchParams]);
 
 	// Cmd+Enter to run
 	useEffect(() => {

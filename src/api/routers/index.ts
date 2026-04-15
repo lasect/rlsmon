@@ -1,4 +1,5 @@
 import { router } from "../trpc";
+import { auditRouter } from "./audit";
 import { healthRouter } from "./health";
 import { matrixRouter } from "./matrix";
 import { metaRouter } from "./meta";
@@ -13,6 +14,7 @@ export const appRouter = router({
 	policies: policiesRouter,
 	roles: rolesRouter,
 	simulate: simulateRouter,
+	audit: auditRouter,
 });
 
 export type AppRouter = typeof appRouter;

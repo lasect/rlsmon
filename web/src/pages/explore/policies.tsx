@@ -1,5 +1,6 @@
 import { Shield, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { trpc } from "@/api/trpc";
 import { ApiErrorCard } from "@/components/api-error-card";
 import { CodeBlock } from "@/components/code-block";
@@ -15,6 +16,30 @@ export function PoliciesPage() {
 	const [search, setSearch] = useState("");
 	const [selectedName, setSelectedName] = useState<string | null>(null);
 	const [groupBy, setGroupBy] = useState<PolicyGroupBy>("table");
+	const [searchParams] = useSearchParams();
+
+	useEffect(() => {
+		const tableParam = searchParams.get("table");
+		const policyParam = searchParams.get("policy");
+
+		if (tableParam) {
+			setSearch(tableParam);
+		}
+
+		if (policyParam) {
+			setSelectedName(policyParam);
+			return;
+		}
+
+		if (tableParam && data) {
+			const match = data.find(
+				(policy) => `${policy.schema}.${policy.table}` === tableParam,
+			);
+			if (match) {
+				setSelectedName(match.name);
+			}
+		}
+	}, [data, searchParams]);
 
 	if (isLoading) {
 		return (
