@@ -5,6 +5,7 @@ import { matrixRouter } from "./matrix";
 import { metaRouter } from "./meta";
 import { policiesRouter } from "./policies";
 import { rolesRouter } from "./roles";
+import { rowAccessRouter } from "./row-access";
 import { simulateRouter } from "./simulate";
 
 export const appRouter = router({
@@ -15,6 +16,7 @@ export const appRouter = router({
 	roles: rolesRouter,
 	simulate: simulateRouter,
 	audit: auditRouter,
+	rowAccess: rowAccessRouter,
 });
 
 export type AppRouter = typeof appRouter;
