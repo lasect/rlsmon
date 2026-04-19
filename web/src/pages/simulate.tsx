@@ -35,10 +35,15 @@ interface JwtClaim {
 	value: string;
 }
 
+interface SeedRow {
+	[key: string]: string;
+}
+
 interface SimulateConfig {
 	role: string;
 	table: string;
 	claims: JwtClaim[];
+	seedRows?: SeedRow[];
 }
 
 function loadConfig(): SimulateConfig | null {
@@ -83,6 +88,10 @@ export function SimulatePage() {
 		unknown
 	> | null>(null);
 	const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+	const [seedRows, setSeedRows] = useState<SeedRow[]>([]);
+	const [seedRowsJsonMode, setSeedRowsJsonMode] = useState(false);
+	const [seedRowsJson, setSeedRowsJson] = useState("[]");
+	const [seedRowsJsonError, setSeedRowsJsonError] = useState<string>("");
 
 	const rolesQuery = trpc.roles.list.useQuery();
 	const metaQuery = trpc.meta.get.useQuery();
@@ -124,6 +133,15 @@ export function SimulatePage() {
 
 	const tables =
 		metaQuery.data?.tables.map((t) => `${t.schema}.${t.name}`).sort() ?? [];
+
+	const tableColumns = useMemo(() => {
+		if (!selectedTable || !metaQuery.data) return [];
+		const [schema, table] = selectedTable.split(".");
+		const tableInfo = metaQuery.data.tables.find(
+			(t) => t.schema === schema && t.name === table,
+		);
+		return tableInfo?.columns.map((c) => c.name) ?? [];
+	}, [selectedTable, metaQuery.data]);
 
 	const policyTableSet = new Set(
 		metaQuery.data?.policies.map((p) => `${p.schema}.${p.table}`) ?? [],
@@ -171,6 +189,25 @@ export function SimulatePage() {
 			}
 		}
 
+		let seedRowsToUse: Array<Record<string, unknown>> | undefined;
+		if (seedRowsJsonMode) {
+			try {
+				const parsed = JSON.parse(seedRowsJson);
+				if (Array.isArray(parsed) && parsed.length > 0) {
+					seedRowsToUse = parsed;
+				}
+			} catch {
+				return;
+			}
+		} else if (seedRows.length > 0) {
+			const valid = seedRows.filter((row) =>
+				Object.values(row).some((v) => v !== ""),
+			);
+			if (valid.length > 0) {
+				seedRowsToUse = valid;
+			}
+		}
+
 		setPersona({
 			role: selectedRole,
 			claims,
@@ -178,7 +215,6 @@ export function SimulatePage() {
 			lastRunAt: Date.now(),
 		});
 
-		// Persist config
 		saveConfig({
 			role: selectedRole,
 			table: selectedTable,
@@ -190,6 +226,7 @@ export function SimulatePage() {
 			table,
 			role: selectedRole,
 			jwtClaims: Object.keys(claims).length > 0 ? claims : undefined,
+			seedRows: seedRowsToUse,
 		});
 	};
 
@@ -215,6 +252,54 @@ export function SimulatePage() {
 		} catch {
 			setRawJsonError("Invalid JSON");
 		}
+	};
+
+	const handleSeedRowsJsonChange = (value: string) => {
+		setSeedRowsJson(value);
+		try {
+			JSON.parse(value);
+			setSeedRowsJsonError("");
+		} catch {
+			setSeedRowsJsonError("Invalid JSON");
+		}
+	};
+
+	const addSeedRow = () => {
+		const newRow: SeedRow = {};
+		if (tableColumns.length > 0) {
+			for (const col of tableColumns) {
+				newRow[col] = "";
+			}
+		}
+		setSeedRows([...seedRows, newRow]);
+	};
+
+	const removeSeedRow = (index: number) => {
+		setSeedRows(seedRows.filter((_, i) => i !== index));
+	};
+
+	const updateSeedRow = (index: number, column: string, value: string) => {
+		const updated = [...seedRows];
+		updated[index][column] = value;
+		setSeedRows(updated);
+	};
+
+	const switchToJsonMode = () => {
+		const json = JSON.stringify(seedRows, null, 2);
+		setSeedRowsJson(json);
+		setSeedRowsJsonMode(true);
+	};
+
+	const switchToFormMode = () => {
+		try {
+			const parsed = JSON.parse(seedRowsJson);
+			if (Array.isArray(parsed)) {
+				setSeedRows(parsed as SeedRow[]);
+			}
+		} catch {
+			// keep current form data if JSON is invalid
+		}
+		setSeedRowsJsonMode(false);
 	};
 
 	const copyRowToClipboard = async (row: Record<string, unknown>) => {
@@ -372,22 +457,156 @@ export function SimulatePage() {
 							<details className="group">
 								<summary className="flex cursor-pointer list-outside items-center gap-2 font-medium text-[10px] text-muted-foreground uppercase tracking-wider hover:text-foreground">
 									<span>Seed Rows</span>
-									<span className="flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-[9px] text-amber-400">
-										<AlertTriangle className="size-2.5" />
-										Coming Soon
-									</span>
+									{(seedRows.filter((r) =>
+										Object.values(r).some((v) => v !== ""),
+									).length > 0 ||
+										(seedRowsJsonMode &&
+											seedRowsJson !== "[]" &&
+											seedRowsJson.trim() !== "")) && (
+										<span className="flex items-center gap-1 rounded bg-green-500/20 px-1.5 py-0.5 text-[9px] text-green-400">
+											{seedRowsJsonMode
+												? (() => {
+														try {
+															const parsed = JSON.parse(seedRowsJson);
+															return Array.isArray(parsed) ? parsed.length : 0;
+														} catch {
+															return 0;
+														}
+													})()
+												: seedRows.filter((r) =>
+														Object.values(r).some((v) => v !== ""),
+													).length}
+										</span>
+									)}
 								</summary>
-								<div className="mt-2 space-y-1">
-									<p className="rounded bg-amber-500/10 p-2 text-[10px] text-amber-400/80">
-										This feature is not yet implemented. Rows are never
-										committed — they are cleaned up automatically after
-										simulation.
-									</p>
-									<textarea
-										placeholder='[{"id": 1, "name": "test"}]'
-										disabled
-										className="min-h-[60px] w-full cursor-not-allowed rounded border border-border bg-background p-2 font-mono text-[11px] text-muted-foreground opacity-50 placeholder:text-muted-foreground"
-									/>
+								<div className="mt-2 space-y-2">
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => {
+												setSeedRowsJsonMode(false);
+												switchToFormMode();
+											}}
+											className={cn(
+												"rounded px-1.5 py-0.5 text-[10px] transition-colors",
+												!seedRowsJsonMode
+													? "bg-muted text-foreground"
+													: "text-muted-foreground hover:text-foreground",
+											)}
+										>
+											Form
+										</button>
+										<button
+											type="button"
+											onClick={switchToJsonMode}
+											className={cn(
+												"rounded px-1.5 py-0.5 text-[10px] transition-colors",
+												seedRowsJsonMode
+													? "bg-muted text-foreground"
+													: "text-muted-foreground hover:text-foreground",
+											)}
+										>
+											JSON
+										</button>
+									</div>
+
+									{seedRowsJsonMode ? (
+										<div className="space-y-1">
+											<textarea
+												value={seedRowsJson}
+												onChange={(e) =>
+													handleSeedRowsJsonChange(e.target.value)
+												}
+												placeholder='[\n  { "id": "uuid-here", "user_id": "uuid-here", "tenant_id": "uuid-here" }\n]'
+												className={cn(
+													"min-h-[80px] w-full rounded border border-border bg-black/30 p-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none",
+													seedRowsJsonError && "border-red-500",
+												)}
+											/>
+											{seedRowsJsonError && (
+												<p className="text-[10px] text-red-400">
+													{seedRowsJsonError}
+												</p>
+											)}
+										</div>
+									) : (
+										<div className="space-y-1">
+											{seedRows.map((row, rowIndex) => (
+												<div
+													key={rowIndex}
+													className="flex flex-wrap items-center gap-1"
+												>
+													{tableColumns.length > 0 ? (
+														tableColumns.map((col) => (
+															<div
+																key={col}
+																className="flex items-center gap-1"
+															>
+																<span className="w-16 truncate text-[9px] text-muted-foreground">
+																	{col}
+																</span>
+																<input
+																	type="text"
+																	value={row[col] ?? ""}
+																	onChange={(e) =>
+																		updateSeedRow(rowIndex, col, e.target.value)
+																	}
+																	placeholder={col}
+																	className="h-7 w-24 rounded border border-border bg-background px-2 font-mono text-[10px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+																/>
+															</div>
+														))
+													) : (
+														<>
+															<input
+																type="text"
+																value={row.key ?? ""}
+																onChange={(e) =>
+																	updateSeedRow(rowIndex, "key", e.target.value)
+																}
+																placeholder="key"
+																className="h-7 w-[35%] rounded-l border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+															/>
+															<input
+																type="text"
+																value={row.value ?? ""}
+																onChange={(e) =>
+																	updateSeedRow(
+																		rowIndex,
+																		"value",
+																		e.target.value,
+																	)
+																}
+																placeholder="value"
+																className="h-7 w-[65%] rounded-r border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+															/>
+														</>
+													)}
+													<button
+														type="button"
+														onClick={() => removeSeedRow(rowIndex)}
+														className="flex h-7 w-7 items-center justify-center rounded border border-border text-muted-foreground hover:bg-red-500/20 hover:text-red-400"
+													>
+														<Trash2 className="size-3" />
+													</button>
+												</div>
+											))}
+											<button
+												type="button"
+												onClick={addSeedRow}
+												className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+											>
+												<Plus className="size-3" />
+												Add Row
+											</button>
+										</div>
+									)}
+
+									{tableColumns.length > 0 && (
+										<p className="text-[9px] text-muted-foreground">
+											Valid columns: {tableColumns.join(", ")}
+										</p>
+									)}
 								</div>
 							</details>
 
@@ -524,13 +743,32 @@ export function SimulatePage() {
 					)}
 
 					{simulateMutation.data?.error && (
-						<div className="flex h-full items-center justify-center">
-							<div className="rounded-md border border-red-500/30 bg-red-500/10 p-4">
-								<p className="font-medium text-red-400 text-xs">Error</p>
-								<p className="mt-1 text-muted-foreground text-xs">
-									{simulateMutation.data.error}
-								</p>
-							</div>
+						<div className="flex h-full items-center justify-center p-4">
+							{simulateMutation.data.seedError ? (
+								<div className="flex w-full max-w-md gap-4">
+									<div className="flex-1 rounded-md border border-amber-500/30 bg-amber-500/10 p-4">
+										<div className="flex items-center gap-2">
+											<AlertTriangle className="size-4 text-amber-400" />
+											<p className="font-medium text-amber-400 text-xs">
+												Seed row error
+											</p>
+										</div>
+										<p className="mt-2 text-muted-foreground text-xs">
+											{simulateMutation.data.error}
+										</p>
+										<p className="mt-2 text-[10px] text-muted-foreground/70">
+											Check that your seed row columns match the table schema
+										</p>
+									</div>
+								</div>
+							) : (
+								<div className="rounded-md border border-red-500/30 bg-red-500/10 p-4">
+									<p className="font-medium text-red-400 text-xs">Error</p>
+									<p className="mt-1 text-muted-foreground text-xs">
+										{simulateMutation.data.error}
+									</p>
+								</div>
+							)}
 						</div>
 					)}
 
@@ -623,6 +861,14 @@ export function SimulatePage() {
 									· policies: {relevantPolicies.map((p) => p.name).join(", ")}
 								</span>
 							)}
+							{simulateMutation.data.seedRowCount &&
+								simulateMutation.data.seedRowCount > 0 && (
+									<span className="ml-1 text-amber-400">
+										· {simulateMutation.data.seedRowCount} seed row
+										{simulateMutation.data.seedRowCount !== 1 ? "s" : ""}{" "}
+										injected
+									</span>
+								)}
 						</div>
 					</div>
 				)}

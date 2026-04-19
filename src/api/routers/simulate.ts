@@ -10,12 +10,14 @@ export const simulateRouter = router({
 				table: z.string(),
 				role: z.string(),
 				jwtClaims: z.record(z.unknown()).optional(),
+				seedRows: z.array(z.record(z.unknown())).optional(),
 			}),
 		)
 		.mutation(async ({ input }): Promise<SimulationResult> => {
 			return simulateSelect(input.schema, input.table, {
 				role: input.role,
 				jwtClaims: input.jwtClaims,
+				seedRows: input.seedRows,
 			});
 		}),
 });
