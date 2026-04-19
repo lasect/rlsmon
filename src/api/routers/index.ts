@@ -7,6 +7,7 @@ import { policiesRouter } from "./policies";
 import { rolesRouter } from "./roles";
 import { rowAccessRouter } from "./row-access";
 import { simulateRouter } from "./simulate";
+import { snapshotsRouter } from "./snapshots";
 
 export const appRouter = router({
 	health: healthRouter,
@@ -17,6 +18,7 @@ export const appRouter = router({
 	simulate: simulateRouter,
 	audit: auditRouter,
 	rowAccess: rowAccessRouter,
+	snapshots: snapshotsRouter,
 });
 
 export type AppRouter = typeof appRouter;
