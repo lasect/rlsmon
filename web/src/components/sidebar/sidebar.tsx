@@ -9,6 +9,7 @@ import {
 	Play,
 	Settings,
 	Shield,
+	ShieldCheck,
 	Users,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -55,6 +56,11 @@ const navGroups: NavGroup[] = [
 		items: [
 			{ label: "Snapshots", href: "/history", icon: History },
 			{ label: "Diff Viewer", href: "/history/diff", icon: GitCompare },
+			{
+				label: "Migration Check",
+				href: "/history/migration",
+				icon: ShieldCheck,
+			},
 		],
 	},
 ];

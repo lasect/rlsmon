@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { trpc } from "@/api/trpc";
 import { ApiErrorCard } from "@/components/api-error-card";
+import { MigrationCheckPanel } from "@/components/migration/MigrationCheckPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,9 @@ export function AuditPage() {
 	const navigate = useNavigate();
 	const [result, setResult] = useState<AuditResult | null>(() =>
 		loadStoredAuditResults(),
+	);
+	const [activeTab, setActiveTab] = useState<"overview" | "migration">(
+		"overview",
 	);
 	const [search, setSearch] = useState("");
 	const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
@@ -176,8 +180,71 @@ export function AuditPage() {
 		);
 	}
 
+	if (activeTab === "migration") {
+		return (
+			<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
+				<div className="mb-3 flex gap-1">
+					<button
+						type="button"
+						onClick={() => setActiveTab("overview")}
+						className={cn(
+							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							activeTab === "overview"
+								? "bg-primary/10 text-primary"
+								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+						)}
+					>
+						Overview
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("migration")}
+						className={cn(
+							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							activeTab === "migration"
+								? "bg-primary/10 text-primary"
+								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+						)}
+					>
+						Migration Check
+					</button>
+				</div>
+				<div className="flex-1 overflow-hidden">
+					<MigrationCheckPanel mode="embedded" />
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex h-full flex-col overflow-auto px-4 pt-3 pb-4">
+			<div className="mb-3 flex gap-1">
+				<button
+					type="button"
+					onClick={() => setActiveTab("overview")}
+					className={cn(
+						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						activeTab === "overview"
+							? "bg-primary/10 text-primary"
+							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+					)}
+				>
+					Overview
+				</button>
+				<button
+					type="button"
+					onClick={() => setActiveTab("migration")}
+					className={cn(
+						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						activeTab === "migration"
+							? "bg-primary/10 text-primary"
+							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+					)}
+				>
+					Migration Check
+				</button>
+			</div>
+
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h1 className="font-semibold text-sm">Audit Overview</h1>

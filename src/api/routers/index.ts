@@ -3,6 +3,7 @@ import { auditRouter } from "./audit";
 import { healthRouter } from "./health";
 import { matrixRouter } from "./matrix";
 import { metaRouter } from "./meta";
+import { migrationCheckRouter } from "./migration-check";
 import { policiesRouter } from "./policies";
 import { rolesRouter } from "./roles";
 import { rowAccessRouter } from "./row-access";
@@ -19,6 +20,7 @@ export const appRouter = router({
 	audit: auditRouter,
 	rowAccess: rowAccessRouter,
 	snapshots: snapshotsRouter,
+	migrationCheck: migrationCheckRouter,
 });
 
 export type AppRouter = typeof appRouter;

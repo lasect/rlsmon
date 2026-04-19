@@ -2,6 +2,7 @@ import { Camera, ChevronRight, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { trpc } from "@/api/trpc";
+import { MigrationCheckPanel } from "@/components/migration/MigrationCheckPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatTimestampForInput, type SnapshotMeta } from "@/lib/snapshots";
@@ -262,6 +263,9 @@ export function HistoryPage() {
 	const [searchParams] = useSearchParams();
 	const [showPopover, setShowPopover] = useState(false);
 	const [compareModeId, setCompareModeId] = useState<string | null>(null);
+	const [activeTab, setActiveTab] = useState<"snapshots" | "migration">(
+		"snapshots",
+	);
 
 	const snapshotsQuery = trpc.snapshots.list.useQuery();
 	const createMutation = trpc.snapshots.create.useMutation({
@@ -321,8 +325,75 @@ export function HistoryPage() {
 	const compareSnapshot = snapshots.find((s) => s.id === compareModeId);
 	const isCompareMode = !!compareModeId;
 
+	if (activeTab === "migration") {
+		return (
+			<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
+				<div className="mb-3 flex gap-1">
+					<button
+						type="button"
+						onClick={() => setActiveTab("snapshots")}
+						className={cn(
+							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							activeTab === "snapshots"
+								? "bg-primary/10 text-primary"
+								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+						)}
+					>
+						Snapshots
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("migration")}
+						className={cn(
+							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							activeTab === "migration"
+								? "bg-primary/10 text-primary"
+								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+						)}
+					>
+						Migration Check
+					</button>
+				</div>
+				<div className="flex-1 overflow-hidden">
+					<MigrationCheckPanel
+						mode="embedded"
+						defaultSnapshotId={compareModeId ?? undefined}
+						snapshots={snapshots}
+					/>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
+			<div className="mb-3 flex gap-1">
+				<button
+					type="button"
+					onClick={() => setActiveTab("snapshots")}
+					className={cn(
+						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						activeTab === "snapshots"
+							? "bg-primary/10 text-primary"
+							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+					)}
+				>
+					Snapshots
+				</button>
+				<button
+					type="button"
+					onClick={() => setActiveTab("migration")}
+					className={cn(
+						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						activeTab === "migration"
+							? "bg-primary/10 text-primary"
+							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+					)}
+				>
+					Migration Check
+				</button>
+			</div>
+
 			<div className="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h1 className="font-semibold text-sm">Snapshots</h1>
