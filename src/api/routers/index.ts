@@ -1,4 +1,5 @@
 import { router } from "../trpc";
+import { annotationsRouter } from "./annotations";
 import { auditRouter } from "./audit";
 import { healthRouter } from "./health";
 import { matrixRouter } from "./matrix";
@@ -21,6 +22,7 @@ export const appRouter = router({
 	rowAccess: rowAccessRouter,
 	snapshots: snapshotsRouter,
 	migrationCheck: migrationCheckRouter,
+	annotations: annotationsRouter,
 });
 
 export type AppRouter = typeof appRouter;

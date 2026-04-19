@@ -189,3 +189,114 @@ export async function getMeta(): Promise<MetaData> {
 
 	return { tables, roles, policies };
 }
+
+// Coverage Score Types
+export interface CoverageScore {
+	totalTables: number;
+	rlsEnabledCount: number;
+	withPoliciesCount: number;
+	score: number;
+	grade: "A" | "B" | "C" | "D" | "F";
+	unprotectedTables: Array<{
+		schema: string;
+		table: string;
+		rlsEnabled: boolean;
+	}>;
+	breakdown: Array<{
+		schema: string;
+		table: string;
+		rlsEnabled: boolean;
+		policyCount: number;
+	}>;
+}
+
+export async function getPolicyCoverageScore(): Promise<CoverageScore> {
+	// Query 1: Total non-system tables
+	const totalResult = await catalogSql`
+		SELECT COUNT(*) as count FROM pg_tables 
+		WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+	`;
+	const totalTables = Number(totalResult[0]?.count ?? 0);
+
+	// Query 2: Tables with RLS enabled
+	const rlsResult = await catalogSql`
+		SELECT COUNT(*) as count FROM pg_class c
+		JOIN pg_namespace n ON n.oid = c.relnamespace
+		WHERE c.relkind = 'r' 
+		AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+		AND c.relrowsecurity = true
+	`;
+	const rlsEnabledCount = Number(rlsResult[0]?.count ?? 0);
+
+	// Query 3: Tables with RLS enabled AND at least one policy
+	const withPoliciesResult = await catalogSql`
+		SELECT COUNT(DISTINCT schemaname || '.' || tablename) as count
+		FROM pg_policies
+		WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+	`;
+	const withPoliciesCount = Number(withPoliciesResult[0]?.count ?? 0);
+
+	// Calculate score
+	const score =
+		totalTables > 0
+			? Math.round((withPoliciesCount / totalTables) * 100 * 10) / 10
+			: 0;
+
+	// Calculate grade
+	let grade: CoverageScore["grade"];
+	if (score >= 90) grade = "A";
+	else if (score >= 75) grade = "B";
+	else if (score >= 50) grade = "C";
+	else if (score >= 25) grade = "D";
+	else grade = "F";
+
+	// Query 4: Per-table breakdown
+	const breakdownResult = await catalogSql`
+		SELECT 
+			t.schemaname,
+			t.tablename,
+			c.relrowsecurity as rls_enabled,
+			COUNT(p.policyname) as policy_count
+		FROM pg_tables t
+		JOIN pg_class c ON c.relname = t.tablename
+		JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = t.schemaname
+		LEFT JOIN pg_policies p ON p.schemaname = t.schemaname AND p.tablename = t.tablename
+		WHERE t.schemaname NOT IN ('pg_catalog', 'information_schema')
+		GROUP BY t.schemaname, t.tablename, c.relrowsecurity
+		ORDER BY t.schemaname, t.tablename
+	`;
+
+	const breakdown: CoverageScore["breakdown"] = breakdownResult.map((row) => ({
+		schema: row.schemaname,
+		table: row.tablename,
+		rlsEnabled: row.rls_enabled,
+		policyCount: Number(row.policy_count),
+	}));
+
+	// Build unprotected tables list (sorted worst first)
+	// Worse: rlsEnabled=false, no policies
+	const unprotectedTables: CoverageScore["unprotectedTables"] = breakdown
+		.filter((row) => row.policyCount === 0)
+		.map((row) => ({
+			schema: row.schema,
+			table: row.table,
+			rlsEnabled: row.rlsEnabled,
+		}))
+		.sort((a, b) => {
+			// a.rlsEnabled=false is worse than a.rlsEnabled=true with no policies
+			if (a.rlsEnabled !== b.rlsEnabled) {
+				return a.rlsEnabled ? 1 : -1;
+			}
+			return 0;
+		});
+
+	return {
+		totalTables,
+		rlsEnabledCount,
+		withPoliciesCount,
+		score,
+		grade,
+		unprotectedTables,
+		breakdown,
+	};
+}

@@ -59,6 +59,31 @@ interface TableGrouping {
 	hasInfo: boolean;
 }
 
+function gradeStyles(grade: "A" | "B" | "C" | "D" | "F") {
+	switch (grade) {
+		case "A":
+		case "B":
+			return {
+				text: "text-green-400",
+				bg: "bg-green-400/10",
+				border: "border-green-400/20",
+			};
+		case "C":
+			return {
+				text: "text-amber-400",
+				bg: "bg-amber-400/10",
+				border: "border-amber-400/20",
+			};
+		case "D":
+		case "F":
+			return {
+				text: "text-destructive",
+				bg: "bg-destructive/10",
+				border: "border-destructive/20",
+			};
+	}
+}
+
 export function AuditPage() {
 	const navigate = useNavigate();
 	const [result, setResult] = useState<AuditResult | null>(() =>
@@ -71,6 +96,12 @@ export function AuditPage() {
 	const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
 	const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
 	const [now, setNow] = useState(Date.now());
+	const [showUnprotected, setShowUnprotected] = useState(false);
+	const {
+		data: coverageData,
+		isLoading: coverageLoading,
+		error: coverageError,
+	} = trpc.audit.coverage.useQuery();
 	const auditMutation = trpc.audit.run.useMutation({
 		onSuccess: (data) => {
 			setResult(data);
@@ -273,6 +304,88 @@ export function AuditPage() {
 							<span className="text-muted-foreground text-xs">Never run</span>
 						)}
 					</p>
+					{coverageError ? (
+						<p className="mt-0.5 text-muted-foreground text-xs">
+							Coverage: error: {coverageError.message}
+						</p>
+					) : coverageLoading ? (
+						<p className="mt-0.5 text-muted-foreground text-xs">
+							Coverage: loading...
+						</p>
+					) : coverageData ? (
+						<>
+							<p className="mt-0.5 text-muted-foreground text-xs">
+								<span className="text-muted-foreground">Coverage: </span>
+								<span
+									className={cn(
+										"font-medium",
+										gradeStyles(coverageData.grade).text,
+									)}
+								>
+									{coverageData.score}%
+								</span>
+								<span
+									className={cn(
+										"ml-1 rounded px-1 font-bold text-xs",
+										gradeStyles(coverageData.grade).bg,
+										gradeStyles(coverageData.grade).text,
+									)}
+								>
+									{coverageData.grade}
+								</span>
+								{" · "}
+								<span className="text-muted-foreground">
+									{coverageData.withPoliciesCount} of {coverageData.totalTables}{" "}
+									tables protected
+								</span>
+								{" · "}
+								<span
+									className={cn(
+										coverageData.unprotectedTables.length > 0
+											? "text-destructive"
+											: "text-green-400",
+									)}
+								>
+									{coverageData.unprotectedTables.length} unprotected
+								</span>
+								{coverageData.unprotectedTables.length > 0 && (
+									<button
+										type="button"
+										onClick={() => setShowUnprotected(!showUnprotected)}
+										className="ml-2 text-muted-foreground underline"
+									>
+										{showUnprotected ? "▼" : "▶"} Show unprotected tables (
+										{coverageData.unprotectedTables.length})
+									</button>
+								)}
+							</p>
+							{showUnprotected && coverageData.unprotectedTables.length > 0 && (
+								<div className="mt-1 flex flex-wrap gap-1">
+									{coverageData.unprotectedTables.slice(0, 20).map((t) => (
+										<button
+											key={`${t.schema}.${t.table}`}
+											type="button"
+											onClick={() =>
+												navigate(
+													`/explore/policies?table=${encodeURIComponent(
+														`${t.schema}.${t.table}`,
+													)}`,
+												)
+											}
+											className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+										>
+											{t.schema}.{t.table}
+										</button>
+									))}
+									{coverageData.unprotectedTables.length > 20 && (
+										<span className="text-[10px] text-muted-foreground">
+											+ {coverageData.unprotectedTables.length - 20} more
+										</span>
+									)}
+								</div>
+							)}
+						</>
+					) : null}
 				</div>
 
 				<div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { Shield, Users } from "lucide-react";
+import { Edit2, MessageSquare, Shield, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { trpc } from "@/api/trpc";
@@ -10,12 +10,259 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type PolicyGroupBy = "table" | "command" | "none";
+type AnnotationStatusFilter =
+	| "all"
+	| "reviewed"
+	| "needs-attention"
+	| "approved"
+	| "unannotated";
+
+const STATUS_COLORS = {
+	reviewed: {
+		badge: "bg-green-500/10",
+		text: "text-green-500",
+		border: "border-green-500/20",
+	},
+	approved: {
+		badge: "bg-blue-500/10",
+		text: "text-blue-500",
+		border: "border-blue-500/20",
+	},
+	"needs-attention": {
+		badge: "bg-amber-500/10",
+		text: "text-amber-500",
+		border: "border-amber-500/20",
+	},
+} as const;
+
+function StatusBadge({
+	status,
+}: {
+	status: "reviewed" | "approved" | "needs-attention";
+}) {
+	const colors = STATUS_COLORS[status];
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-medium text-[10px]",
+				colors.badge,
+				colors.text,
+				colors.border,
+			)}
+		>
+			{status === "needs-attention" && (
+				<span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+			)}
+			{status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
+		</span>
+	);
+}
+
+function AnnotationEditForm({
+	annotation,
+	schema,
+	table,
+	policy,
+	onCancel,
+}: {
+	annotation: { note: string; owner: string; status: string } | null;
+	schema: string;
+	table: string;
+	policy: string;
+	onCancel: () => void;
+}) {
+	const utils = trpc.useUtils();
+	const setMutation = trpc.annotations.set.useMutation({
+		onSuccess: () => {
+			utils.annotations.list.invalidate();
+		},
+	});
+
+	const [note, setNote] = useState(annotation?.note ?? "");
+	const [owner, setOwner] = useState(annotation?.owner ?? "");
+	const [status, setStatus] = useState<
+		"reviewed" | "needs-attention" | "approved"
+	>(
+		(annotation?.status as "reviewed" | "needs-attention" | "approved") ||
+			"needs-attention",
+	);
+
+	const handleSave = () => {
+		setMutation.mutate({
+			schema,
+			table,
+			policy,
+			note: note || undefined,
+			owner: owner || undefined,
+			status,
+		});
+	};
+
+	return (
+		<div className="space-y-2">
+			<div>
+				<label className="mb-1 block text-[10px] text-muted-foreground uppercase">
+					Status
+				</label>
+				<select
+					value={status}
+					onChange={(e) =>
+						setStatus(
+							e.target.value as "reviewed" | "needs-attention" | "approved",
+						)
+					}
+					className={cn(
+						"w-full rounded border border-input bg-background px-2 py-1 text-xs",
+					)}
+				>
+					<option value="reviewed">Reviewed</option>
+					<option value="needs-attention">Needs Attention</option>
+					<option value="approved">Approved</option>
+				</select>
+			</div>
+			<div>
+				<label className="mb-1 block text-[10px] text-muted-foreground uppercase">
+					Owner
+				</label>
+				<input
+					type="text"
+					value={owner}
+					onChange={(e) => setOwner(e.target.value)}
+					placeholder="team or person name"
+					className={cn(
+						"w-full rounded border border-input bg-background px-2 py-1 text-xs",
+					)}
+				/>
+			</div>
+			<div>
+				<label className="mb-1 block text-[10px] text-muted-foreground uppercase">
+					Note
+				</label>
+				<textarea
+					value={note}
+					onChange={(e) => setNote(e.target.value)}
+					placeholder="Add a note about this policy..."
+					rows={3}
+					className={cn(
+						"w-full rounded border border-input bg-background px-2 py-1 text-xs",
+					)}
+				/>
+			</div>
+			<div className="flex gap-2 pt-1">
+				<button
+					type="button"
+					onClick={handleSave}
+					disabled={setMutation.isPending}
+					className="rounded bg-primary px-3 py-1 font-medium text-primary-foreground text-xs hover:bg-primary/90"
+				>
+					{setMutation.isPending ? "Saving..." : "Save"}
+				</button>
+				<button
+					type="button"
+					onClick={onCancel}
+					className="rounded px-3 py-1 text-muted-foreground text-xs hover:text-foreground"
+				>
+					Cancel
+				</button>
+			</div>
+		</div>
+	);
+}
+
+function AnnotationDisplay({
+	annotation,
+	onEdit,
+	onDelete,
+}: {
+	annotation: {
+		note: string;
+		owner: string;
+		status: string;
+		updatedAt: string;
+	};
+	onEdit: () => void;
+	onDelete: () => void;
+}) {
+	return (
+		<div className="space-y-2">
+			<div className="flex items-center gap-2">
+				<span className="text-[10px] text-muted-foreground uppercase">
+					Status
+				</span>
+				<StatusBadge
+					status={
+						annotation.status as "reviewed" | "approved" | "needs-attention"
+					}
+				/>
+			</div>
+			{annotation.owner && (
+				<div className="text-[11px]">
+					<span className="text-muted-foreground">Owner: </span>
+					<span className="text-muted-foreground/70">{annotation.owner}</span>
+				</div>
+			)}
+			{annotation.note && (
+				<div>
+					<div className="mb-1 text-[10px] text-muted-foreground uppercase">
+						Note
+					</div>
+					<div className="rounded bg-muted/30 p-2 text-xs">
+						{annotation.note}
+					</div>
+				</div>
+			)}
+			<div className="text-[10px] text-muted-foreground">
+				Updated:{" "}
+				{new Date(annotation.updatedAt).toLocaleDateString("en-US", {
+					month: "short",
+					day: "numeric",
+					year: "numeric",
+				})}
+			</div>
+			<div className="flex gap-3 pt-1">
+				<button
+					type="button"
+					onClick={onEdit}
+					className="flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
+				>
+					<Edit2 className="size-3" />
+					Edit
+				</button>
+				<button
+					type="button"
+					onClick={onDelete}
+					className="flex items-center gap-1 text-muted-foreground text-xs hover:text-destructive"
+				>
+					<Trash2 className="size-3" />
+					Delete
+				</button>
+			</div>
+		</div>
+	);
+}
 
 export function PoliciesPage() {
-	const { data, isLoading, error, refetch } = trpc.policies.list.useQuery();
+	const {
+		data: policiesData,
+		isLoading,
+		error,
+		refetch,
+	} = trpc.policies.list.useQuery();
+	const { data: annotationsData } = trpc.annotations.list.useQuery();
+	const utils = trpc.useUtils();
+	const deleteMutation = trpc.annotations.delete.useMutation({
+		onSuccess: () => {
+			utils.annotations.list.invalidate();
+		},
+	});
+
 	const [search, setSearch] = useState("");
 	const [selectedName, setSelectedName] = useState<string | null>(null);
 	const [groupBy, setGroupBy] = useState<PolicyGroupBy>("table");
+	const [annotationFilter, setAnnotationFilter] =
+		useState<AnnotationStatusFilter>("all");
+	const [isEditingAnnotation, setIsEditingAnnotation] = useState(false);
+
 	const [searchParams] = useSearchParams();
 
 	useEffect(() => {
@@ -31,15 +278,34 @@ export function PoliciesPage() {
 			return;
 		}
 
-		if (tableParam && data) {
-			const match = data.find(
+		if (tableParam && policiesData) {
+			const match = policiesData.find(
 				(policy) => `${policy.schema}.${policy.table}` === tableParam,
 			);
 			if (match) {
 				setSelectedName(match.name);
 			}
 		}
-	}, [data, searchParams]);
+	}, [policiesData, searchParams]);
+
+	const annotationMap = new Map<
+		string,
+		{
+			key: string;
+			schema: string;
+			table: string;
+			policy: string;
+			note: string;
+			owner: string;
+			status: string;
+			updatedAt: string;
+		}
+	>();
+	if (annotationsData) {
+		for (const a of annotationsData) {
+			annotationMap.set(a.key, a);
+		}
+	}
 
 	if (isLoading) {
 		return (
@@ -59,7 +325,7 @@ export function PoliciesPage() {
 		);
 	}
 
-	if (!data || data.length === 0) {
+	if (!policiesData || policiesData.length === 0) {
 		return (
 			<div className="flex h-full items-center justify-center">
 				<div className="text-muted-foreground text-xs">No policies found</div>
@@ -67,7 +333,7 @@ export function PoliciesPage() {
 		);
 	}
 
-	const filtered = data.filter((p) => {
+	let filtered = policiesData.filter((p) => {
 		if (!search) return true;
 		const s = search.toLowerCase();
 		return (
@@ -79,10 +345,22 @@ export function PoliciesPage() {
 		);
 	});
 
-	const groups: { key: string; label: string; items: typeof data }[] = [];
+	if (annotationFilter !== "all") {
+		filtered = filtered.filter((p) => {
+			const key = `${p.schema}.${p.table}.${p.name}`;
+			const annotation = annotationMap.get(key);
+			if (annotationFilter === "unannotated") {
+				return !annotation;
+			}
+			return annotation?.status === annotationFilter;
+		});
+	}
+
+	const groups: { key: string; label: string; items: typeof policiesData }[] =
+		[];
 
 	if (groupBy === "table") {
-		const tableMap = new Map<string, typeof data>();
+		const tableMap = new Map<string, typeof policiesData>();
 		for (const p of filtered) {
 			const key = `${p.schema}.${p.table}`;
 			if (!tableMap.has(key)) tableMap.set(key, []);
@@ -92,7 +370,7 @@ export function PoliciesPage() {
 			groups.push({ key, label: key, items });
 		}
 	} else if (groupBy === "command") {
-		const cmdMap = new Map<string, typeof data>();
+		const cmdMap = new Map<string, typeof policiesData>();
 		for (const p of filtered) {
 			const key = p.command;
 			if (!cmdMap.has(key)) cmdMap.set(key, []);
@@ -105,7 +383,24 @@ export function PoliciesPage() {
 		groups.push({ key: "all", label: "All Policies", items: filtered });
 	}
 
-	const selected = data.find((p) => p.name === selectedName) ?? null;
+	const selected = policiesData.find((p) => p.name === selectedName) ?? null;
+	const selectedAnnotation = selected
+		? (annotationMap.get(
+				`${selected.schema}.${selected.table}.${selected.name}`,
+			) ?? null)
+		: null;
+
+	const annotatedCount = annotationsData?.length ?? 0;
+	const needsAttentionCount =
+		annotationsData?.filter((a) => a.status === "needs-attention").length ?? 0;
+
+	const handleDeleteAnnotation = (
+		schema: string,
+		table: string,
+		policy: string,
+	) => {
+		deleteMutation.mutate({ schema, table, policy });
+	};
 
 	return (
 		<div className="flex h-full">
@@ -114,7 +409,20 @@ export function PoliciesPage() {
 					<div className="mb-2">
 						<h1 className="font-semibold text-sm">Policies</h1>
 						<p className="text-[11px] text-muted-foreground">
-							{data.length} polic{data.length !== 1 ? "ies" : "y"}
+							{filtered.length} polic{filtered.length !== 1 ? "ies" : "y"}
+							{annotatedCount > 0 && (
+								<span>
+									{" · "}
+									{annotatedCount} annotated
+									{needsAttentionCount > 0 && (
+										<span className="text-amber-500">
+											{" · "}
+											{needsAttentionCount} need
+											{needsAttentionCount !== 1 && "s"} attention
+										</span>
+									)}
+								</span>
+							)}
 						</p>
 					</div>
 					<FilterBar
@@ -145,6 +453,31 @@ export function PoliciesPage() {
 							</button>
 						))}
 					</div>
+					<div className="mt-2 flex flex-wrap gap-1">
+						{(
+							[
+								{ key: "all", label: "All" },
+								{ key: "reviewed", label: "Reviewed" },
+								{ key: "needs-attention", label: "Needs" },
+								{ key: "approved", label: "Approved" },
+								{ key: "unannotated", label: "None" },
+							] as const
+						).map((opt) => (
+							<button
+								key={opt.key}
+								type="button"
+								onClick={() => setAnnotationFilter(opt.key)}
+								className={cn(
+									"rounded border border-white/10 px-1.5 py-0.5 text-[10px] transition-colors",
+									annotationFilter === opt.key
+										? "border-primary/30 bg-primary/20 text-primary"
+										: "text-muted-foreground hover:border-white/30",
+								)}
+							>
+								{opt.label}
+							</button>
+						))}
+					</div>
 				</div>
 				<div className="flex-1 overflow-y-auto px-2 pb-2">
 					{groups.map((group) => (
@@ -154,29 +487,50 @@ export function PoliciesPage() {
 									{group.label}
 								</div>
 							)}
-							{group.items.map((policy) => (
-								<button
-									key={policy.name}
-									type="button"
-									onClick={() => setSelectedName(policy.name)}
-									className={cn(
-										"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
-										selectedName === policy.name
-											? "bg-muted"
-											: "hover:bg-muted/50",
-									)}
-								>
-									<div className="flex min-w-0 flex-1 flex-col">
-										<code className="truncate font-medium font-mono text-[11px]">
-											{policy.name}
-										</code>
-										<span className="truncate text-[10px] text-muted-foreground">
-											{policy.schema}.{policy.table}
-										</span>
-									</div>
-									<CommandBadge command={policy.command} />
-								</button>
-							))}
+							{group.items.map((policy) => {
+								const key = `${policy.schema}.${policy.table}.${policy.name}`;
+								const annotation = annotationMap.get(key);
+								return (
+									<button
+										key={policy.name}
+										type="button"
+										onClick={() => setSelectedName(policy.name)}
+										className={cn(
+											"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
+											selectedName === policy.name
+												? "bg-muted"
+												: "hover:bg-muted/50",
+										)}
+									>
+										<div className="flex min-w-0 flex-1 flex-col">
+											<code className="truncate font-medium font-mono text-[11px]">
+												{policy.name}
+											</code>
+											<span className="truncate text-[10px] text-muted-foreground">
+												{policy.schema}.{policy.table}
+											</span>
+										</div>
+										<div className="flex shrink-0 items-center gap-1.5">
+											{annotation && (
+												<>
+													{annotation.note && (
+														<MessageSquare className="size-3 text-muted-foreground/50" />
+													)}
+													<StatusBadge
+														status={
+															annotation.status as
+																| "reviewed"
+																| "approved"
+																| "needs-attention"
+														}
+													/>
+												</>
+											)}
+											<CommandBadge command={policy.command} />
+										</div>
+									</button>
+								);
+							})}
 						</div>
 					))}
 				</div>
@@ -248,6 +602,69 @@ export function PoliciesPage() {
 									</span>
 								</div>
 							)}
+
+							<Separator className="my-4" />
+
+							<div className="space-y-1.5">
+								<div className="flex items-center justify-between">
+									<div className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+										Annotation
+									</div>
+									{(isEditingAnnotation || !selectedAnnotation) && (
+										<button
+											type="button"
+											onClick={() => setIsEditingAnnotation(true)}
+											className="text-muted-foreground text-xs hover:text-foreground"
+										>
+											<Edit2 className="size-3" />
+										</button>
+									)}
+								</div>
+
+								{!isEditingAnnotation && selectedAnnotation && (
+									<AnnotationDisplay
+										annotation={selectedAnnotation}
+										onEdit={() => setIsEditingAnnotation(true)}
+										onDelete={() =>
+											handleDeleteAnnotation(
+												selected!.schema,
+												selected!.table,
+												selected!.name,
+											)
+										}
+									/>
+								)}
+
+								{isEditingAnnotation && (
+									<AnnotationEditForm
+										annotation={
+											selectedAnnotation
+												? {
+														note: selectedAnnotation.note,
+														owner: selectedAnnotation.owner,
+														status: selectedAnnotation.status,
+													}
+												: null
+										}
+										schema={selected.schema}
+										table={selected.table}
+										policy={selected.name}
+										onCancel={() => setIsEditingAnnotation(false)}
+									/>
+								)}
+
+								{!isEditingAnnotation && !selectedAnnotation && (
+									<button
+										type="button"
+										onClick={() => setIsEditingAnnotation(true)}
+										className={cn(
+											"w-full cursor-pointer rounded border border-white/20 border-dashed p-3 text-muted-foreground text-xs hover:border-white/40",
+										)}
+									>
+										+ Add annotation
+									</button>
+								)}
+							</div>
 						</div>
 					</div>
 				) : (

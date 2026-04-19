@@ -16,10 +16,40 @@ import { cn } from "@/lib/utils";
 type MatrixFilter = "all" | "grants" | "denies" | "risky";
 type MatrixView = "grid" | "list";
 
+function gradeStyles(grade: "A" | "B" | "C" | "D" | "F") {
+	switch (grade) {
+		case "A":
+		case "B":
+			return {
+				text: "text-green-400",
+				bg: "bg-green-400/10",
+				border: "border-green-400/20",
+			};
+		case "C":
+			return {
+				text: "text-amber-400",
+				bg: "bg-amber-400/10",
+				border: "border-amber-400/20",
+			};
+		case "D":
+		case "F":
+			return {
+				text: "text-destructive",
+				bg: "bg-destructive/10",
+				border: "border-destructive/20",
+			};
+	}
+}
+
 export function MatrixPage() {
 	const { data, isLoading, error, refetch } = trpc.matrix.get.useQuery();
 	const { data: policiesData } = trpc.policies.list.useQuery();
 	const rolesData = trpc.roles.list.useQuery().data;
+	const {
+		data: coverageData,
+		isLoading: coverageLoading,
+		error: coverageError,
+	} = trpc.audit.coverage.useQuery();
 	const [search, setSearch] = useState("");
 	const [filter, setFilter] = useState<MatrixFilter>("all");
 	const [view, setView] = useState<MatrixView>("grid");
@@ -474,6 +504,24 @@ export function MatrixPage() {
 			<div className="flex-shrink-0 px-4 pt-3 pb-2">
 				<div className="mb-2 flex items-center justify-between">
 					<div className="flex items-baseline gap-3">
+						{coverageError ? null : coverageLoading ? (
+							<div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+						) : coverageData ? (
+							<button
+								type="button"
+								onClick={() => navigate("/audit")}
+								className={cn(
+									"flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-xs transition-colors hover:opacity-80",
+									gradeStyles(coverageData.grade).bg,
+									gradeStyles(coverageData.grade).text,
+									gradeStyles(coverageData.grade).border,
+									"border",
+								)}
+							>
+								<span className="text-muted-foreground">Coverage </span>[
+								{coverageData.score}% {coverageData.grade}]
+							</button>
+						) : null}
 						<div>
 							<h1 className="font-semibold text-sm">Access Matrix</h1>
 							<p className="text-[11px] text-muted-foreground">
