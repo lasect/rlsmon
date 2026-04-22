@@ -5,24 +5,19 @@ import type * as React from "react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-	"group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border border-transparent px-2 py-0.5 font-medium text-xs transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
+	"inline-flex h-5 w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-sm border px-1.5 py-0.5 font-medium font-mono text-[10px] transition-colors",
 	{
 		variants: {
 			variant: {
-				default: "bg-primary text-primary-foreground hover:bg-primary/90",
-				secondary: "bg-muted text-foreground hover:bg-muted/80",
-				success:
-					"border-success/20 bg-success/10 text-success hover:bg-success/20",
-				warning:
-					"border-warning/20 bg-warning/10 text-warning hover:bg-warning/20",
-				error: "border-error/20 bg-error/10 text-error hover:bg-error/20",
-				destructive:
-					"bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:ring-destructive/20",
-				outline:
-					"border-border text-foreground hover:bg-muted hover:text-muted-foreground",
-				ghost:
-					"hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
-				link: "text-primary underline-offset-4 hover:underline",
+				default: "border-transparent bg-accent text-[#0a0a0a]",
+				secondary: "border-border bg-surface-raised text-text-muted",
+				success: "border-accent/20 bg-accent/10 text-accent",
+				warning: "border-warning/20 bg-warning/10 text-warning",
+				error: "border-error/20 bg-error/10 text-error",
+				destructive: "border-critical/10 bg-critical/10 text-critical",
+				outline: "border-border text-text-muted",
+				ghost: "border-transparent text-text-muted hover:bg-surface-raised",
+				link: "border-transparent text-accent underline-offset-4 hover:underline",
 			},
 		},
 		defaultVariants: {

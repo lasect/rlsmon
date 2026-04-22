@@ -1,5 +1,4 @@
 import { Outlet } from "react-router-dom";
-import { BottomStatusBar } from "@/components/layout/bottom-status-bar";
 import { TopBar } from "@/components/layout/top-bar";
 import { Sidebar } from "@/components/sidebar/sidebar";
 
@@ -13,7 +12,6 @@ export function AppShell() {
 					<main className="flex-1 overflow-auto bg-background">
 						<Outlet />
 					</main>
-					<BottomStatusBar />
 				</div>
 			</div>
 		</div>

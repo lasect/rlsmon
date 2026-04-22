@@ -1,24 +1,9 @@
-import type { LucideIcon } from "lucide-react";
-import {
-	ClipboardList,
-	Cpu,
-	GitCompare,
-	History,
-	KeyRound,
-	LayoutGrid,
-	Play,
-	Settings,
-	Shield,
-	ShieldCheck,
-	Users,
-} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
 	label: string;
 	href: string;
-	icon: LucideIcon;
 }
 
 interface NavGroup {
@@ -28,38 +13,37 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
 	{
-		label: "Explore",
+		label: "// explore",
 		items: [
-			{ label: "Matrix", href: "/explore/matrix", icon: LayoutGrid },
-			{ label: "Policies", href: "/explore/policies", icon: Shield },
-			{ label: "Roles", href: "/explore/roles", icon: Users },
-			{ label: "Row Access", href: "/explore/row-access", icon: KeyRound },
+			{ label: "Matrix", href: "/explore/matrix" },
+			{ label: "Policies", href: "/explore/policies" },
+			{ label: "Roles", href: "/explore/roles" },
+			{ label: "Row Access", href: "/explore/row-access" },
 		],
 	},
 	{
-		label: "Simulate",
-		items: [{ label: "Persona", href: "/simulate", icon: Play }],
+		label: "// simulate",
+		items: [{ label: "Persona", href: "/simulate" }],
 	},
 	{
-		label: "Audit",
+		label: "// audit",
 		items: [
-			{ label: "Overview", href: "/audit", icon: ClipboardList },
-			{ label: "CI Mode", href: "/audit/ci", icon: Cpu },
+			{ label: "Overview", href: "/audit" },
+			{ label: "CI Mode", href: "/audit/ci" },
 		],
 	},
 	{
-		label: "AI",
-		items: [{ label: "Tools", href: "/ai", icon: Cpu }],
+		label: "// ai",
+		items: [{ label: "Tools", href: "/ai" }],
 	},
 	{
-		label: "History",
+		label: "// history",
 		items: [
-			{ label: "Snapshots", href: "/history", icon: History },
-			{ label: "Diff Viewer", href: "/history/diff", icon: GitCompare },
+			{ label: "Snapshots", href: "/history" },
+			{ label: "Diff Viewer", href: "/history/diff" },
 			{
 				label: "Migration Check",
 				href: "/history/migration",
-				icon: ShieldCheck,
 			},
 		],
 	},
@@ -70,14 +54,13 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
 		<Link
 			to={item.href}
 			className={cn(
-				"flex items-center gap-2 rounded-md px-0.5 py-1 text-[12px] transition-colors hover:bg-primary/5 hover:text-sidebar-foreground",
-				isActive &&
-					"border-primary border-l-2 bg-primary/10 pl-[6px] font-medium text-sidebar-primary",
-				!isActive && "border-transparent border-l-2 text-sidebar-foreground/70",
+				"block w-full rounded-sm px-3 py-1.5 font-mono text-[11px] transition-colors",
+				isActive
+					? "border-accent border-l-2 bg-accent-glow pl-[10px] text-accent"
+					: "border-transparent border-l-2 text-text-muted hover:bg-surface-raised hover:text-text",
 			)}
 		>
-			<item.icon className="size-3.5 shrink-0" />
-			<span>{item.label}</span>
+			{item.label}
 		</Link>
 	);
 }
@@ -86,16 +69,17 @@ export function Sidebar() {
 	const location = useLocation();
 
 	return (
-		<aside className="flex h-full w-48 flex-col border-border border-r bg-sidebar">
-			<div className="flex h-10 items-center border-sidebar-border border-b px-3">
-				<span className="font-mono font-semibold text-sidebar-foreground text-xs tracking-tight">
-					RLSMon
+		<aside className="flex h-full w-[200px] flex-col border-border border-r bg-surface">
+			<div className="flex flex-col border-border border-b px-3 py-3">
+				<span className="font-bold font-mono text-accent text-sm">RLSMon</span>
+				<span className="mt-1 truncate font-mono text-[10px] text-text-dim">
+					localhost:5432
 				</span>
 			</div>
 			<nav className="flex-1 overflow-y-auto px-2 py-2">
 				{navGroups.map((group) => (
 					<div key={group.label} className="mb-3">
-						<div className="mb-1 pl-1 font-medium text-[10px] text-sidebar-foreground/30 uppercase tracking-wider">
+						<div className="mb-1 pl-3 font-mono text-[10px] text-text-dim uppercase tracking-widest">
 							{group.label}
 						</div>
 						<div className="space-y-px">
@@ -110,19 +94,17 @@ export function Sidebar() {
 					</div>
 				))}
 			</nav>
-			<div className="border-sidebar-border border-t p-2">
+			<div className="border-border border-t p-2">
 				<Link
 					to="/settings"
 					className={cn(
-						"flex items-center gap-2 rounded-md px-2 py-1 text-[12px] text-sidebar-foreground/70 transition-colors hover:bg-primary/5 hover:text-sidebar-foreground",
-						location.pathname === "/settings" &&
-							"border-primary border-l-2 bg-primary/10 pl-[6px] font-medium text-sidebar-primary",
-						location.pathname !== "/settings" &&
-							"border-transparent border-l-2",
+						"block w-full rounded-sm px-3 py-1.5 font-mono text-[11px] transition-colors",
+						location.pathname === "/settings"
+							? "border-accent border-l-2 bg-accent-glow pl-[10px] text-accent"
+							: "border-transparent border-l-2 text-text-muted hover:bg-surface-raised hover:text-text",
 					)}
 				>
-					<Settings className="size-3.5 shrink-0" />
-					<span>Settings</span>
+					Settings
 				</Link>
 			</div>
 		</aside>

@@ -6,27 +6,43 @@ import {
 } from "@/components/ui/tooltip";
 
 export function TopBar() {
+	const isConnected = true;
+
 	return (
-		<header className="flex h-10 items-center justify-between border-border border-t-2 border-t-primary border-b bg-background px-4">
+		<header className="flex h-8 items-center justify-between border-border border-b bg-surface px-3">
 			<div className="flex items-center gap-2">
-				<Database className="size-3.5 text-muted-foreground" />
-				<span className="font-mono text-muted-foreground text-xs">
+				<Database className="size-3 text-text-muted" />
+				<span className="font-mono text-text-muted text-xs">
 					localhost:5432
 				</span>
 			</div>
-			<div className="flex items-center gap-3">
+			<div className="flex items-center gap-2">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<div className="flex items-center gap-1.5">
 							<Circle
-								className="size-2 shrink-0"
-								fill="currentColor"
-								style={{ color: "var(--rls-grant)" }}
+								className="size-2 shrink-0 fill-current"
+								style={{
+									color: isConnected
+										? "var(--color-accent)"
+										: "var(--color-critical)",
+								}}
 							/>
-							<span className="text-muted-foreground text-xs">connected</span>
+							<span
+								className="font-mono text-[10px]"
+								style={{
+									color: isConnected
+										? "var(--color-accent)"
+										: "var(--color-critical)",
+								}}
+							>
+								{isConnected ? "connected" : "disconnected"}
+							</span>
 						</div>
 					</TooltipTrigger>
-					<TooltipContent side="bottom">Connected to database</TooltipContent>
+					<TooltipContent side="bottom">
+						{isConnected ? "Connected to database" : "Not connected"}
+					</TooltipContent>
 				</Tooltip>
 			</div>
 		</header>
