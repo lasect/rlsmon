@@ -13,7 +13,7 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
 	{
-		label: "// explore",
+		label: "EXPLORE",
 		items: [
 			{ label: "Matrix", href: "/explore/matrix" },
 			{ label: "Policies", href: "/explore/policies" },
@@ -22,22 +22,22 @@ const navGroups: NavGroup[] = [
 		],
 	},
 	{
-		label: "// simulate",
+		label: "SIMULATE",
 		items: [{ label: "Persona", href: "/simulate" }],
 	},
 	{
-		label: "// audit",
+		label: "AUDIT",
 		items: [
 			{ label: "Overview", href: "/audit" },
 			{ label: "CI Mode", href: "/audit/ci" },
 		],
 	},
 	{
-		label: "// ai",
+		label: "AI",
 		items: [{ label: "Tools", href: "/ai" }],
 	},
 	{
-		label: "// history",
+		label: "HISTORY",
 		items: [
 			{ label: "Snapshots", href: "/history" },
 			{ label: "Diff Viewer", href: "/history/diff" },
@@ -69,13 +69,7 @@ export function Sidebar() {
 	const location = useLocation();
 
 	return (
-		<aside className="flex h-full w-[200px] flex-col border-border border-r bg-surface">
-			<div className="flex flex-col border-border border-b px-3 py-3">
-				<span className="font-bold font-mono text-accent text-sm">RLSMon</span>
-				<span className="mt-1 truncate font-mono text-[10px] text-text-dim">
-					localhost:5432
-				</span>
-			</div>
+		<aside className="flex h-full w-[200px] flex-col bg-surface">
 			<nav className="flex-1 overflow-y-auto px-2 py-2">
 				{navGroups.map((group) => (
 					<div key={group.label} className="mb-3">

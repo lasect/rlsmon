@@ -2,9 +2,9 @@
 
 :root {
 	--color-base: #0a0a0a;
-	--color-surface: #111111;
-	--color-surface-raised: #1a1a1a;
-	--color-surface-overlay: #222222;
+	--color-surface: #0f0f0f;
+	--color-surface-raised: #141414;
+	--color-surface-overlay: #1a1a1a;
 	--color-border: #2a2a2a;
 	--color-border-subtle: #1e1e1e;
 

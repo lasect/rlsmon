@@ -5,10 +5,10 @@ import { Sidebar } from "@/components/sidebar/sidebar";
 export function AppShell() {
 	return (
 		<div className="flex h-svh flex-col">
+			<TopBar />
 			<div className="flex flex-1 overflow-hidden">
 				<Sidebar />
 				<div className="flex flex-1 flex-col overflow-hidden">
-					<TopBar />
 					<main className="flex-1 overflow-auto bg-background">
 						<Outlet />
 					</main>
