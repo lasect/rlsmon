@@ -1,8 +1,6 @@
-import { Check, Copy } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { Copy } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
@@ -17,11 +15,9 @@ import {
 	type AuditFinding,
 	type AuditFormat,
 	buildAuditCommand,
-	buildGithubActionsSnippet,
 	copyText,
 	type ExitCodeBehavior,
 	type FailOnSeverity,
-	formatGithubAnnotation,
 	loadStoredAuditResults,
 } from "@/lib/audit";
 import { cn } from "@/lib/utils";
@@ -34,7 +30,7 @@ export function AuditCiPage() {
 	]);
 	const [exitCodeBehavior, setExitCodeBehavior] =
 		useState<ExitCodeBehavior>("fail-on-findings");
-	const [copied, setCopied] = useState<"command" | "yaml" | null>(null);
+	const [copied, setCopied] = useState<"command" | null>(null);
 	const [storedFindings, setStoredFindings] = useState<AuditFinding[] | null>(
 		() => loadStoredAuditResults()?.findings ?? null,
 	);
@@ -59,12 +55,8 @@ export function AuditCiPage() {
 			}),
 		[exitCodeBehavior, failOn, format, selectedChecks],
 	);
-	const yamlSnippet = useMemo(
-		() => buildGithubActionsSnippet(failOn),
-		[failOn],
-	);
 
-	const handleCopy = async (type: "command" | "yaml", value: string) => {
+	const handleCopy = async (type: "command", value: string) => {
 		await copyText(value);
 		setCopied(type);
 		window.setTimeout(
@@ -82,40 +74,24 @@ export function AuditCiPage() {
 	};
 
 	return (
-		<div className="flex h-full flex-col overflow-auto px-4 pt-3 pb-4">
-			<div className="flex flex-wrap items-start justify-between gap-3">
-				<div>
-					<div className="mb-2">
-						<Link
-							to="/audit"
-							className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-						>
-							← Overview
-						</Link>
-					</div>
-					<h1 className="font-semibold text-sm">CI Mode</h1>
-					<p className="mt-0.5 text-[11px] text-muted-foreground">
-						Run audits in your CI/CD pipeline
-					</p>
+		<div className="flex h-full flex-col px-4 pt-3 pb-4">
+			<div className="mb-4">
+				<div className="mb-2">
+					<Link
+						to="/audit"
+						className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+					>
+						← Overview
+					</Link>
 				</div>
-
-				<Button size="sm" onClick={() => handleCopy("command", command)}>
-					{copied === "command" ? (
-						<>
-							<Check className="size-3.5" />
-							Copied
-						</>
-					) : (
-						<>
-							<Copy className="size-3.5" />
-							Copy Command
-						</>
-					)}
-				</Button>
+				<h1 className="font-semibold text-sm">CI Mode</h1>
+				<p className="mt-0.5 text-[11px] text-muted-foreground">
+					Run audits in your CI/CD pipeline
+				</p>
 			</div>
 
-			<div className="mt-4 grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-				<div className="rounded-lg border border-border/70 bg-card p-4">
+			<div className="flex flex-1 flex-row gap-6 overflow-hidden">
+				<div className="w-96 flex-shrink-0 overflow-y-auto rounded-lg border border-border/70 bg-card p-3">
 					<div className="space-y-5">
 						<div className="space-y-2">
 							<div className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
@@ -221,73 +197,37 @@ export function AuditCiPage() {
 					</div>
 				</div>
 
-				<div className="space-y-4">
-					<PreviewPanel
-						title="Command preview"
-						action={
-							<Button
-								size="sm"
-								variant="outline"
+				<div className="flex flex-1 flex-col gap-4 overflow-hidden">
+					<div className="flex flex-1 flex-col rounded-lg border border-border/70 bg-card p-3">
+						<div className="mb-2 flex items-center justify-between gap-2">
+							<h2 className="font-medium text-sm">Command preview</h2>
+							<button
+								type="button"
 								onClick={() => handleCopy("command", command)}
+								className="flex cursor-pointer items-center gap-1.5 text-xs text-zinc-400 transition-colors hover:text-zinc-100"
 							>
-								{copied === "command" ? "Copied" : "Copy Command"}
-							</Button>
-						}
-					>
-						<pre className="overflow-x-auto rounded-lg bg-black/40 p-4 font-mono text-[12px] text-slate-100 leading-relaxed">
+								<Copy className="size-3" />
+								<span>{copied === "command" ? "Copied" : "Copy"}</span>
+							</button>
+						</div>
+						<pre className="flex-1 overflow-auto whitespace-pre-wrap rounded-lg bg-black/40 p-3 font-mono text-slate-100 text-xs">
 							{command}
 						</pre>
-					</PreviewPanel>
+					</div>
 
-					<PreviewPanel
-						title="GitHub Actions"
-						action={
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => handleCopy("yaml", yamlSnippet)}
-							>
-								{copied === "yaml" ? "Copied" : "Copy YAML"}
-							</Button>
-						}
-					>
-						<pre className="overflow-x-auto rounded-lg bg-black/40 p-4 font-mono text-[12px] text-slate-100 leading-relaxed">
-							{yamlSnippet}
-						</pre>
-					</PreviewPanel>
-
-					<PreviewPanel
-						title="Output preview"
-						action={
-							<Badge variant="outline">
+					<div className="flex flex-1 flex-col rounded-lg border border-border/70 bg-card p-3">
+						<div className="mb-2 flex items-center justify-between gap-2">
+							<h2 className="font-medium text-sm">Output preview</h2>
+							<span className="rounded bg-zinc-950 px-2 py-0.5 font-mono text-xs text-zinc-600">
 								{storedFindings ? "using last audit results" : "example output"}
-							</Badge>
-						}
-					>
-						<OutputPreview findings={findings} format={format} />
-					</PreviewPanel>
+							</span>
+						</div>
+						<div className="flex-1 overflow-auto rounded-lg bg-black/40 p-3">
+							<OutputPreview findings={findings} format={format} />
+						</div>
+					</div>
 				</div>
 			</div>
-		</div>
-	);
-}
-
-function PreviewPanel({
-	title,
-	action,
-	children,
-}: {
-	title: string;
-	action?: ReactNode;
-	children: ReactNode;
-}) {
-	return (
-		<div className="rounded-lg border border-border/70 bg-card p-4">
-			<div className="mb-3 flex items-center justify-between gap-2">
-				<h2 className="font-medium text-sm">{title}</h2>
-				{action}
-			</div>
-			{children}
 		</div>
 	);
 }
@@ -307,31 +247,16 @@ function OutputPreview({
 		);
 	}
 
-	if (format === "github") {
-		return (
-			<pre className="overflow-x-auto rounded-lg bg-black/40 p-4 font-mono text-[12px] text-slate-100 leading-relaxed">
-				{findings.map(formatGithubAnnotation).join("\n")}
-			</pre>
-		);
-	}
-
 	return (
-		<div className="rounded-lg bg-black/40 p-4 font-mono text-[12px] leading-relaxed">
+		<div className="rounded-lg bg-black/40 p-3 font-mono text-xs leading-relaxed">
 			{findings.map((finding) => (
-				<div key={finding.id} className="mb-4 last:mb-0">
-					<div
-						className={cn(
-							"font-semibold",
-							finding.severity === "critical" && "text-red-400",
-							finding.severity === "warning" && "text-amber-300",
-							finding.severity === "info" && "text-sky-300",
-						)}
-					>
+				<div key={finding.id} className="mb-4 text-zinc-400 last:mb-0">
+					<div className="font-semibold text-red-400">
 						[{finding.severity.toUpperCase()}] {finding.check} {finding.schema}.
 						{finding.table}
 					</div>
-					<div className="mt-1 text-slate-100">{finding.message}</div>
-					<div className="pl-4 text-slate-400">{finding.detail}</div>
+					<div className="mt-1">{finding.message}</div>
+					<div className="pl-4">{finding.detail}</div>
 				</div>
 			))}
 		</div>

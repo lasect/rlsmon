@@ -4,15 +4,13 @@ import { Sidebar } from "@/components/sidebar/sidebar";
 
 export function AppShell() {
 	return (
-		<div className="flex h-svh flex-col">
+		<div className="flex h-screen flex-col overflow-hidden">
 			<TopBar />
 			<div className="flex flex-1 overflow-hidden">
 				<Sidebar />
-				<div className="flex flex-1 flex-col overflow-hidden">
-					<main className="flex-1 overflow-auto bg-background">
-						<Outlet />
-					</main>
-				</div>
+				<main className="flex flex-1 flex-col overflow-hidden bg-background">
+					<Outlet />
+				</main>
 			</div>
 		</div>
 	);

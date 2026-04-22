@@ -1,13 +1,29 @@
+import {
+	Camera,
+	ClipboardCheck,
+	GitBranch,
+	Grid3x3,
+	Rows3,
+	ScrollText,
+	Settings,
+	ShieldAlert,
+	Sparkles,
+	Terminal,
+	UserCircle,
+	Users,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
 	label: string;
 	href: string;
+	icon: React.ElementType;
 }
 
 interface NavGroup {
 	label: string;
+	hasBorder?: boolean;
 	items: NavItem[];
 }
 
@@ -15,52 +31,59 @@ const navGroups: NavGroup[] = [
 	{
 		label: "EXPLORE",
 		items: [
-			{ label: "Matrix", href: "/explore/matrix" },
-			{ label: "Policies", href: "/explore/policies" },
-			{ label: "Roles", href: "/explore/roles" },
-			{ label: "Row Access", href: "/explore/row-access" },
+			{ label: "Matrix", href: "/explore/matrix", icon: Grid3x3 },
+			{ label: "Policies", href: "/explore/policies", icon: ScrollText },
+			{ label: "Roles", href: "/explore/roles", icon: Users },
+			{ label: "Row Access", href: "/explore/row-access", icon: Rows3 },
 		],
 	},
 	{
 		label: "SIMULATE",
-		items: [{ label: "Persona", href: "/simulate" }],
+		hasBorder: true,
+		items: [{ label: "Persona", href: "/simulate", icon: UserCircle }],
 	},
 	{
 		label: "AUDIT",
+		hasBorder: true,
 		items: [
-			{ label: "Overview", href: "/audit" },
-			{ label: "CI Mode", href: "/audit/ci" },
+			{ label: "Overview", href: "/audit", icon: ShieldAlert },
+			{ label: "CI Mode", href: "/audit/ci", icon: Terminal },
 		],
 	},
 	{
 		label: "AI",
-		items: [{ label: "Tools", href: "/ai" }],
+		hasBorder: true,
+		items: [{ label: "Tools", href: "/ai", icon: Sparkles }],
 	},
 	{
 		label: "HISTORY",
+		hasBorder: true,
 		items: [
-			{ label: "Snapshots", href: "/history" },
-			{ label: "Diff Viewer", href: "/history/diff" },
+			{ label: "Snapshots", href: "/history", icon: Camera },
+			{ label: "Diff Viewer", href: "/history/diff", icon: GitBranch },
 			{
 				label: "Migration Check",
 				href: "/history/migration",
+				icon: ClipboardCheck,
 			},
 		],
 	},
 ];
 
 function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
+	const Icon = item.icon;
 	return (
 		<Link
 			to={item.href}
 			className={cn(
-				"block w-full rounded-sm px-3 py-1.5 font-mono text-[11px] transition-colors",
+				"flex w-full items-center gap-2 rounded-md px-3 py-1 text-[13px] transition-colors",
 				isActive
-					? "border-accent border-l-2 bg-accent-glow pl-[10px] text-accent"
-					: "border-transparent border-l-2 text-text-muted hover:bg-surface-raised hover:text-text",
+					? "bg-zinc-800 font-medium text-white"
+					: "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100",
 			)}
 		>
-			{item.label}
+			<Icon className="size-3.5 text-zinc-500" />
+			<span>{item.label}</span>
 		</Link>
 	);
 }
@@ -69,14 +92,21 @@ export function Sidebar() {
 	const location = useLocation();
 
 	return (
-		<aside className="flex h-full w-[200px] flex-col bg-surface">
-			<nav className="flex-1 overflow-y-auto px-2 py-2">
+		<aside className="flex h-full w-52 flex-col border-zinc-800 border-r bg-surface">
+			<nav className="flex-1 overflow-y-auto px-2">
 				{navGroups.map((group) => (
-					<div key={group.label} className="mb-3">
-						<div className="mb-1 pl-3 font-mono text-[10px] text-text-dim uppercase tracking-widest">
+					<div key={group.label}>
+						<div
+							className={cn(
+								"mb-1 select-none px-3 font-mono text-[10px] text-zinc-600/70 uppercase tracking-[0.12em]",
+								group.hasBorder
+									? "mt-1 border-zinc-800/60 border-t pt-2 pb-0.5"
+									: "pt-4 pb-0.5",
+							)}
+						>
 							{group.label}
 						</div>
-						<div className="space-y-px">
+						<div className="space-y-1">
 							{group.items.map((item) => (
 								<NavLink
 									key={item.href}
@@ -88,17 +118,18 @@ export function Sidebar() {
 					</div>
 				))}
 			</nav>
-			<div className="border-border border-t p-2">
+			<div className="border-zinc-800/60 border-t px-2 pt-2 pb-2">
 				<Link
 					to="/settings"
 					className={cn(
-						"block w-full rounded-sm px-3 py-1.5 font-mono text-[11px] transition-colors",
+						"flex w-full items-center gap-2 rounded-md px-3 py-1 text-[13px] transition-colors",
 						location.pathname === "/settings"
-							? "border-accent border-l-2 bg-accent-glow pl-[10px] text-accent"
-							: "border-transparent border-l-2 text-text-muted hover:bg-surface-raised hover:text-text",
+							? "bg-zinc-800 font-medium text-white"
+							: "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100",
 					)}
 				>
-					Settings
+					<Settings className="size-3.5" />
+					<span>Settings</span>
 				</Link>
 			</div>
 		</aside>
