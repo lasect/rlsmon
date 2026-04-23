@@ -416,13 +416,25 @@ export function AuditPage() {
 
 				<div className="flex items-center gap-2">
 					<Button variant="outline" size="sm" asChild>
-						<Link to="/audit/ci">CI Mode →</Link>
+						<Link
+							className="rounded-sm border border-[#333333] px-3 py-1.5 font-mono text-[#888888] text-xs transition-colors hover:border-[#555555] hover:text-[#cccccc]"
+							to="/audit/ci"
+						>
+							CI Mode →
+						</Link>
 					</Button>
 					<Button
 						size="sm"
 						onClick={runAudit}
 						disabled={auditMutation.isPending}
-						className="bg-success text-success-foreground hover:bg-success/90"
+						className="flex items-center gap-2 rounded-sm px-3 py-1.5 font-mono font-semibold text-[#0a0a0a] text-xs transition-colors"
+						style={{ backgroundColor: "#00c27a" }}
+						onMouseEnter={(e) =>
+							(e.currentTarget.style.backgroundColor = "#00a866")
+						}
+						onMouseLeave={(e) =>
+							(e.currentTarget.style.backgroundColor = "#00c27a")
+						}
 					>
 						{auditMutation.isPending ? (
 							<>
@@ -570,7 +582,19 @@ function CheckFindingsRow({
 				) : (
 					<ChevronRight className="size-4 shrink-0 text-muted-foreground" />
 				)}
-				<code className="shrink-0 font-mono text-accent text-xs">{check}</code>
+				<code
+					className="shrink-0 font-mono text-xs"
+					style={{
+						color:
+							severity === "critical"
+								? "#ff4444"
+								: severity === "warning"
+									? "#ffaa00"
+									: "#4499ff",
+					}}
+				>
+					{check}
+				</code>
 				<span className="shrink-0 text-[10px] text-muted-foreground">
 					{tableCount} table{tableCount !== 1 ? "s" : ""} affected
 				</span>
