@@ -50,13 +50,11 @@ function severityStyles(severity: AuditSeverity) {
 	}
 }
 
-interface TableGrouping {
-	tableKey: string;
-	findings: AuditFinding[];
+interface CheckGrouping {
+	check: string;
+	severity: AuditSeverity;
+	tables: AuditFinding[];
 	severityRank: number;
-	hasCritical: boolean;
-	hasWarning: boolean;
-	hasInfo: boolean;
 }
 
 function gradeStyles(grade: "A" | "B" | "C" | "D" | "F") {
@@ -94,7 +92,7 @@ export function AuditPage() {
 	);
 	const [search, setSearch] = useState("");
 	const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
-	const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
+	const [expandedChecks, setExpandedChecks] = useState<Set<string>>(new Set());
 	const [now, setNow] = useState(Date.now());
 	const [showUnprotected, setShowUnprotected] = useState(false);
 	const {
@@ -105,7 +103,7 @@ export function AuditPage() {
 	const auditMutation = trpc.audit.run.useMutation({
 		onSuccess: (data) => {
 			setResult(data);
-			setExpandedTables(new Set());
+			setExpandedChecks(new Set());
 			saveStoredAuditResults(data);
 		},
 	});
@@ -149,52 +147,76 @@ export function AuditPage() {
 		[result],
 	);
 
-	const tableGroupings = useMemo((): TableGrouping[] => {
+	const checkGroupings = useMemo((): CheckGrouping[] => {
 		if (!result) return [];
 
 		const query = search.trim().toLowerCase();
-		const grouped = new Map<string, AuditFinding[]>();
 
-		for (const finding of result.findings) {
-			const tableKey = `${finding.schema}.${finding.table}`;
-			const existing = grouped.get(tableKey) ?? [];
-			grouped.set(tableKey, [...existing, finding]);
-		}
-
-		const withCounts = Array.from(grouped.entries()).map(
-			([tableKey, findings]) => {
-				const c = findings.filter((f) => f.severity === "critical").length;
-				const w = findings.filter((f) => f.severity === "warning").length;
-				const i = findings.filter((f) => f.severity === "info").length;
-				return {
-					tableKey,
-					findings,
-					severityRank: c * 100 + w * 10 + i,
-					hasCritical: c > 0,
-					hasWarning: w > 0,
-					hasInfo: i > 0,
-				};
+		const grouped = result.findings.reduce(
+			(acc, finding) => {
+				if (!acc[finding.check]) {
+					acc[finding.check] = {
+						check: finding.check,
+						severity: finding.severity,
+						tables: [],
+					};
+				}
+				acc[finding.check].tables.push(finding);
+				return acc;
 			},
+			{} as Record<
+				string,
+				{ check: string; severity: AuditSeverity; tables: AuditFinding[] }
+			>,
 		);
 
-		return withCounts
-			.filter(({ findings }) => {
+		const withSeverityRank = Array.from(Object.values(grouped)).map((g) => {
+			const severities = new Set(g.tables.map((f) => f.severity));
+			const rankMap: Record<AuditSeverity, number> = {
+				critical: 300,
+				warning: 200,
+				info: 100,
+			};
+			const severityRank = Math.max(
+				...Array.from(severities).map((s) => rankMap[s]),
+			);
+			return {
+				check: g.check,
+				severity: g.severity,
+				tables: g.tables,
+				severityRank,
+			};
+		});
+
+		const filtered = withSeverityRank
+			.filter(({ tables }) => {
 				if (severityFilter === "all") return true;
-				return findings.some((f) => f.severity === severityFilter);
+				return tables.some((f) => f.severity === severityFilter);
 			})
-			.filter(({ tableKey, findings }) => {
+			.filter(({ check, tables }) => {
 				if (!query) return true;
-				return (
-					tableKey.toLowerCase().includes(query) ||
-					findings.some(
-						(f) =>
-							f.check.toLowerCase().includes(query) ||
-							`${f.schema}.${f.table}`.toLowerCase().includes(query),
-					)
+				if (check.toLowerCase().includes(query)) return true;
+				return tables.some((f) =>
+					`${f.schema}.${f.table}`.toLowerCase().includes(query),
 				);
-			})
-			.sort((a, b) => b.severityRank - a.severityRank);
+			});
+
+		const sorted = filtered.sort((a, b) => b.severityRank - a.severityRank);
+
+		return sorted.map((group) => ({
+			...group,
+			tables: group.tables.slice().sort((a, b) => {
+				const tableA = `${a.schema}.${a.table}`.toLowerCase();
+				const tableB = `${b.schema}.${b.table}`.toLowerCase();
+				return tableA.localeCompare(tableB);
+			}),
+		}));
 	}, [result, search, severityFilter]);
+
+	const uniqueChecks = useMemo(
+		() => new Set(result?.findings.map((f) => f.check) ?? []).size,
+		[result],
+	);
 
 	const runAudit = () => {
 		auditMutation.reset();
@@ -288,6 +310,10 @@ export function AuditPage() {
 									<span className="text-green-400">No issues found</span>
 								) : (
 									<>
+										<span className="text-destructive">
+											{uniqueChecks} checks flagged
+										</span>
+										{" · "}
 										<span className="text-destructive">
 											{critical} critical
 										</span>
@@ -465,25 +491,26 @@ export function AuditPage() {
 						))}
 					</div>
 
-					{tableGroupings.length === 0 ? (
+					{checkGroupings.length === 0 ? (
 						<div className="mt-4 rounded-lg border border-border border-dashed px-4 py-8 text-center text-muted-foreground text-sm">
 							No findings match the current filters.
 						</div>
 					) : (
 						<div className="mt-3 space-y-1">
-							{tableGroupings.map(({ tableKey, findings }) => (
-								<TableFindingsRow
-									key={tableKey}
-									tableKey={tableKey}
-									findings={findings}
-									expanded={expandedTables.has(tableKey)}
+							{checkGroupings.map(({ check, severity, tables }) => (
+								<CheckFindingsRow
+									key={check}
+									check={check}
+									severity={severity}
+									tables={tables}
+									expanded={expandedChecks.has(check)}
 									onToggle={() =>
-										setExpandedTables((prev) => {
+										setExpandedChecks((prev) => {
 											const next = new Set(prev);
-											if (next.has(tableKey)) {
-												next.delete(tableKey);
+											if (next.has(check)) {
+												next.delete(check);
 											} else {
-												next.add(tableKey);
+												next.add(check);
 											}
 											return next;
 										})
@@ -506,28 +533,28 @@ export function AuditPage() {
 	);
 }
 
-function TableFindingsRow({
-	tableKey,
-	findings,
+function CheckFindingsRow({
+	check,
+	severity,
+	tables,
 	expanded,
 	onToggle,
 	onViewPolicies,
 	onSimulate,
 }: {
-	tableKey: string;
-	findings: AuditFinding[];
+	check: string;
+	severity: AuditSeverity;
+	tables: AuditFinding[];
 	expanded: boolean;
 	onToggle: () => void;
 	onViewPolicies: (table: string) => void;
 	onSimulate: (table: string) => void;
 }) {
-	const severities = useMemo(() => {
-		const s = new Set(findings.map((f) => f.severity));
-		return Array.from(s);
-	}, [findings]);
+	const styles = severityStyles(severity);
+	const tableCount = tables.length;
 
-	const visibleSeverities = severities.slice(0, 4);
-	const extraCount = severities.length - 4;
+	const sampleMessage = tables[0]?.message ?? "";
+	const sampleDetail = tables[0]?.detail ?? "";
 
 	return (
 		<div className="overflow-hidden rounded border border-border/70 bg-card">
@@ -535,7 +562,7 @@ function TableFindingsRow({
 				type="button"
 				onClick={onToggle}
 				className={cn(
-					"flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/5",
+					"flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised",
 				)}
 			>
 				{expanded ? (
@@ -543,25 +570,18 @@ function TableFindingsRow({
 				) : (
 					<ChevronRight className="size-4 shrink-0 text-muted-foreground" />
 				)}
-				<code className="shrink-0 font-mono text-sm">{tableKey}</code>
-				<div className="flex shrink-0 items-center gap-1.5">
-					{visibleSeverities.map((sev) => {
-						const styles = severityStyles(sev);
-						return (
-							<span
-								key={sev}
-								className={cn("size-2 rounded-full", styles.dot)}
-							/>
-						);
-					})}
-					{extraCount > 0 && (
-						<span className="text-muted-foreground text-xs">
-							+{extraCount} more
-						</span>
+				<code className="shrink-0 font-mono text-accent text-xs">{check}</code>
+				<span className="shrink-0 text-[10px] text-muted-foreground">
+					{tableCount} table{tableCount !== 1 ? "s" : ""} affected
+				</span>
+				<span
+					className={cn(
+						"ml-auto flex shrink-0 items-center gap-1.5",
+						styles.text,
 					)}
-				</div>
-				<span className="ml-auto shrink-0 text-muted-foreground text-xs">
-					{findings.length} issue{findings.length !== 1 ? "s" : ""}
+				>
+					<span className={cn("size-2 rounded-full", styles.dot)} />
+					<span className="font-medium text-xs capitalize">{severity}</span>
 				</span>
 			</button>
 
@@ -572,82 +592,62 @@ function TableFindingsRow({
 				)}
 			>
 				<div className="overflow-hidden">
-					<div className="space-y-2 px-4 pt-1 pb-4">
-						{findings.map((finding) => {
-							const styles = severityStyles(finding.severity);
-							return (
-								<div
-									key={finding.id}
-									className={cn(
-										"rounded border border-border/70 border-l-4 bg-background/60 px-3 py-2.5",
-										styles.border,
-									)}
-								>
-									<div className="mb-1.5 flex items-center gap-2">
-										<span className={cn("size-2 rounded-full", styles.dot)} />
-										<code className={cn("font-mono text-xs", styles.text)}>
-											{finding.check}
+					<div className="border-border/50 border-t px-4 pt-3 pb-3">
+						<div className="mb-1 text-sm">{sampleMessage}</div>
+						<div className="mb-3 text-muted-foreground text-xs leading-relaxed">
+							{sampleDetail}
+						</div>
+						<div className="mb-2 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+							AFFECTED TABLES:
+						</div>
+						<div className="space-y-1">
+							{tables.map((finding) => {
+								const tableKey = `${finding.schema}.${finding.table}`;
+								return (
+									<div
+										key={finding.id}
+										className="flex flex-wrap items-center gap-x-2 gap-y-1"
+									>
+										<code className="font-mono text-xs">
+											{finding.schema}.{finding.table}
 										</code>
-									</div>
-									<div className="mb-1 text-sm">{finding.message}</div>
-									<div className="mb-2 text-muted-foreground text-xs leading-relaxed">
-										{finding.detail}
-									</div>
-
-									{((finding.affectedRoles?.length ?? 0) > 0 ||
-										(finding.affectedPolicies?.length ?? 0) > 0) && (
-										<div className="mb-2 flex flex-wrap gap-1.5">
-											{finding.affectedRoles?.map((role) => (
-												<Badge
-													key={`${finding.id}:${role}`}
-													variant="outline"
-													className="font-mono text-[10px]"
-												>
-													role:{role}
-												</Badge>
-											))}
-											{finding.affectedPolicies?.map((policy) => (
-												<Badge
-													key={`${finding.id}:${policy}`}
-													variant="secondary"
-													className="font-mono text-[10px]"
-												>
-													policy:{policy}
-												</Badge>
-											))}
+										{(finding.affectedPolicies?.length ?? 0) > 0 && (
+											<div className="flex flex-wrap gap-1">
+												{finding.affectedPolicies?.map((policy) => (
+													<Badge
+														key={`${finding.id}:${policy}`}
+														variant="secondary"
+														className="font-mono text-[10px]"
+													>
+														{policy}
+													</Badge>
+												))}
+											</div>
+										)}
+										<div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+											<button
+												type="button"
+												onClick={() => onViewPolicies(tableKey)}
+												className="transition-colors hover:text-accent"
+											>
+												View policies →
+											</button>
+											<button
+												type="button"
+												onClick={() => onSimulate(tableKey)}
+												className="transition-colors hover:text-accent"
+											>
+												Simulate →
+											</button>
 										</div>
-									)}
-
-									<div className="flex flex-wrap items-center gap-3 text-xs">
-										<button
-											type="button"
-											onClick={() => onViewPolicies(tableKey)}
-											className="text-muted-foreground transition-colors hover:text-foreground"
-										>
-											View policies →
-										</button>
-										<button
-											type="button"
-											onClick={() => onSimulate(tableKey)}
-											className="text-muted-foreground transition-colors hover:text-foreground"
-										>
-											Simulate →
-										</button>
-										<button
-											type="button"
-											disabled
-											className="inline-flex items-center gap-2 text-muted-foreground/60"
-										>
-											<Sparkles className="size-3" />
-											Explain with AI
-											<Badge variant="outline" className="text-[10px]">
-												coming soon
-											</Badge>
-										</button>
 									</div>
-								</div>
-							);
-						})}
+								);
+							})}
+						</div>
+						<div className="mt-3 flex items-center gap-2 text-muted-foreground/60 text-xs">
+							<Sparkles className="size-3" />
+							<span>Explain with AI → coming soon</span>
+						</div>
 					</div>
 				</div>
 			</div>
