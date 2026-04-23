@@ -1,7 +1,6 @@
 import {
 	Camera,
 	ClipboardCheck,
-	GitBranch,
 	Grid3x3,
 	Rows3,
 	ScrollText,
@@ -60,7 +59,6 @@ const navGroups: NavGroup[] = [
 		hasBorder: true,
 		items: [
 			{ label: "Snapshots", href: "/history", icon: Camera },
-			{ label: "Diff Viewer", href: "/history/diff", icon: GitBranch },
 			{
 				label: "Migration Check",
 				href: "/history/migration",

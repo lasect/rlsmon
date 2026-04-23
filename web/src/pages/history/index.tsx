@@ -315,7 +315,7 @@ export function HistoryPage() {
 			setCompareModeId(null);
 			navigate("/history", { replace: true });
 		} else if (compareModeId) {
-			navigate(`/history/diff?a=${compareModeId}&b=${id}`);
+			navigate(`/history/${id}?compare=${compareModeId}`);
 		} else {
 			navigate(`/history?compare=${id}`, { replace: true });
 			setCompareModeId(id);
@@ -429,7 +429,6 @@ export function HistoryPage() {
 			{isCompareMode && compareSnapshot && (
 				<div className="mt-3 flex items-center justify-between rounded-lg border border-green-800 bg-green-950/50 px-3 py-2 text-sm">
 					<div className="flex items-center gap-2">
-						<span className="text-green-400">📸</span>
 						<span>
 							Comparing from:{" "}
 							<span className="font-medium text-green-300">

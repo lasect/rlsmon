@@ -16,7 +16,6 @@ const routeLabels: Record<string, string> = {
 	"/audit/ci": "Audit / CI Mode",
 	"/ai": "AI / Tools",
 	"/history": "History / Snapshots",
-	"/history/diff": "History / Diff",
 	"/history/migration": "History / Migration",
 	"/settings": "Settings",
 };

@@ -12,7 +12,6 @@ import { PoliciesPage } from "@/pages/explore/policies";
 import { RolesPage } from "@/pages/explore/roles";
 import { RowAccessPage } from "@/pages/explore/row-access";
 import { HistoryPage } from "@/pages/history";
-import { HistoryDiffPage } from "@/pages/history/diff";
 import { MigrationCheckPage } from "@/pages/history/migration";
 import { SnapshotDetailPage } from "@/pages/history/snapshot-detail";
 import { SettingsPage } from "@/pages/settings";
@@ -34,7 +33,6 @@ const router = createBrowserRouter([
 			{ path: "ai", element: <AiPage /> },
 			{ path: "history", element: <HistoryPage /> },
 			{ path: "history/:snapshotId", element: <SnapshotDetailPage /> },
-			{ path: "history/diff", element: <HistoryDiffPage /> },
 			{ path: "history/migration", element: <MigrationCheckPage /> },
 			{ path: "settings", element: <SettingsPage /> },
 		],
