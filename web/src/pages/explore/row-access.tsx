@@ -184,7 +184,28 @@ export function RowAccessPage() {
 		}
 	};
 
-	const firstCanAccessRole = checkAccessMutation.data?.canAccess[0]?.role;
+	// Type guard for old-style response (all roles check)
+	const isOldStyleResponse = (
+		data: unknown,
+	): data is { canAccess: unknown[]; cannotAccess: unknown[] } => {
+		return !!(
+			data &&
+			typeof data === "object" &&
+			"canAccess" in data &&
+			"cannotAccess" in data
+		);
+	};
+
+	const firstCanAccessRole = isOldStyleResponse(checkAccessMutation.data)
+		? checkAccessMutation.data.canAccess[0]?.role
+		: undefined;
+
+	const canAccessData = isOldStyleResponse(checkAccessMutation.data)
+		? checkAccessMutation.data.canAccess
+		: [];
+	const cannotAccessData = isOldStyleResponse(checkAccessMutation.data)
+		? checkAccessMutation.data.cannotAccess
+		: [];
 
 	return (
 		<div className="flex h-full">
@@ -441,16 +462,16 @@ export function RowAccessPage() {
 												<Check className="size-4 text-green-500" />
 												<span className="font-medium text-sm">Can access</span>
 												<span className="rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] text-green-400">
-													{checkAccessMutation.data.canAccess.length}
+													{canAccessData.length}
 												</span>
 											</div>
 											<div className="space-y-1 border-l-2 border-l-green-500/30 pl-3">
-												{checkAccessMutation.data.canAccess.length === 0 ? (
+												{canAccessData.length === 0 ? (
 													<div className="py-2 text-muted-foreground text-xs">
 														No roles can access this row
 													</div>
 												) : (
-													checkAccessMutation.data.canAccess.map((item) => (
+													canAccessData.map((item) => (
 														<div
 															key={item.role}
 															className="flex items-center gap-2 py-1"
@@ -482,16 +503,16 @@ export function RowAccessPage() {
 													Cannot access
 												</span>
 												<span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-400">
-													{checkAccessMutation.data.cannotAccess.length}
+													{cannotAccessData.length}
 												</span>
 											</div>
 											<div className="space-y-1 border-l-2 border-l-red-500/30 pl-3">
-												{checkAccessMutation.data.cannotAccess.length === 0 ? (
+												{cannotAccessData.length === 0 ? (
 													<div className="py-2 text-muted-foreground text-xs">
 														All roles can access this row
 													</div>
 												) : (
-													checkAccessMutation.data.cannotAccess.map((item) => (
+													cannotAccessData.map((item) => (
 														<div
 															key={item.role}
 															className="flex items-center gap-2 py-1"

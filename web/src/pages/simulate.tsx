@@ -1,17 +1,16 @@
 import {
 	AlertTriangle,
-	Clipboard,
+	Check,
 	Play,
 	Plus,
-	Table,
+	Shield,
+	Table2,
 	Trash2,
+	X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { trpc } from "@/api/trpc";
 import { ApiErrorCard } from "@/components/api-error-card";
-import { CellRenderer } from "@/components/simulate/json-cell";
-import { RowDrawer } from "@/components/simulate/row-drawer";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -20,48 +19,50 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { usePersona } from "@/context/persona-context";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "rlsmon:simulate:lastConfig";
+const STORAGE_KEY = "rlsmon:simulate:v2-config";
+
+type Scope = "table" | "row";
 
 interface JwtClaim {
 	key: string;
 	value: string;
 }
 
-interface SeedRow {
-	[key: string]: string;
-}
-
 interface SimulateConfig {
+	scope: Scope;
 	role: string;
 	table: string;
 	claims: JwtClaim[];
-	seedRows?: SeedRow[];
+	rowId: string;
 }
 
-function loadConfig(): SimulateConfig | null {
+function loadConfig(): SimulateConfig {
 	try {
 		const saved = localStorage.getItem(STORAGE_KEY);
-		if (!saved) return null;
-		const parsed = JSON.parse(saved);
-		if (parsed.role && parsed.table) {
-			return {
-				role: parsed.role,
-				table: parsed.table,
-				claims: parsed.claims || [{ key: "", value: "" }],
-			};
+		if (saved) {
+			const parsed = JSON.parse(saved);
+			if (parsed.scope && parsed.role && parsed.table) {
+				return {
+					scope: parsed.scope || "table",
+					role: parsed.role || "",
+					table: parsed.table || "",
+					claims: parsed.claims || [{ key: "", value: "" }],
+					rowId: parsed.rowId || "",
+				};
+			}
 		}
-		return null;
 	} catch {
-		return null;
+		// Ignore
 	}
+	return {
+		scope: "table",
+		role: "",
+		table: "",
+		claims: [{ key: "", value: "" }],
+		rowId: "",
+	};
 }
 
 function saveConfig(config: SimulateConfig): void {
@@ -72,814 +73,554 @@ function saveConfig(config: SimulateConfig): void {
 	}
 }
 
+function ScopeToggle({
+	scope,
+	onChange,
+}: {
+	scope: Scope;
+	onChange: (scope: Scope) => void;
+}) {
+	return (
+		<div className="flex rounded-lg border border-input bg-background p-0.5">
+			<button
+				type="button"
+				onClick={() => onChange("table")}
+				className={cn(
+					"flex-1 rounded-md py-1.5 font-medium text-xs transition-colors",
+					scope === "table"
+						? "bg-primary text-primary-foreground"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+			>
+				<div className="flex items-center justify-center gap-1.5">
+					<Table2 className="h-3.5 w-3.5" />
+					Table
+				</div>
+			</button>
+			<button
+				type="button"
+				onClick={() => onChange("row")}
+				className={cn(
+					"flex-1 rounded-md py-1.5 font-medium text-xs transition-colors",
+					scope === "row"
+						? "bg-primary text-primary-foreground"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+			>
+				<div className="flex items-center justify-center gap-1.5">
+					<Shield className="h-3.5 w-3.5" />
+					Row
+				</div>
+			</button>
+		</div>
+	);
+}
+
+function formatCellValue(value: unknown): string {
+	if (value === null) return "null";
+	if (value === undefined) return "";
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
+}
+
 export function SimulatePage() {
-	const { setPersona } = usePersona();
-	const [searchParams] = useSearchParams();
-	const [selectedRole, setSelectedRole] = useState<string>("");
-	const [selectedTable, setSelectedTable] = useState<string>("");
-	const [jwtClaims, setJwtClaims] = useState<JwtClaim[]>([
-		{ key: "", value: "" },
-	]);
-	const [rawJsonMode, setRawJsonMode] = useState(false);
-	const [rawJson, setRawJson] = useState("{}");
-	const [rawJsonError, setRawJsonError] = useState<string>("");
-	const [selectedRow, setSelectedRow] = useState<Record<
+	const [config, setConfig] = useState<SimulateConfig>(loadConfig);
+	const [selectedRowData, setSelectedRowData] = useState<Record<
 		string,
 		unknown
 	> | null>(null);
-	const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
-	const [seedRows, setSeedRows] = useState<SeedRow[]>([]);
-	const [seedRowsJsonMode, setSeedRowsJsonMode] = useState(false);
-	const [seedRowsJson, setSeedRowsJson] = useState("[]");
-	const [seedRowsJsonError, setSeedRowsJsonError] = useState<string>("");
+	const [results, setResults] = useState<unknown>(null);
+	const [isRunning, setIsRunning] = useState(false);
+
+	const [schema, tableName] = config.table ? config.table.split(".") : ["", ""];
 
 	const rolesQuery = trpc.roles.list.useQuery();
 	const metaQuery = trpc.meta.get.useQuery();
+	const rowAccessQuery = trpc.rowAccess.getRows.useQuery(
+		{ schema: schema || "", table: tableName || "" },
+		{ enabled: !!schema && !!tableName },
+	);
 	const simulateMutation = trpc.simulate.select.useMutation();
+	const rowAccessMutation = trpc.rowAccess.checkAccess.useMutation();
 
-	// Load persisted config on mount
-	useEffect(() => {
-		const saved = loadConfig();
-		if (saved) {
-			setSelectedRole(saved.role);
-			setSelectedTable(saved.table);
-			if (saved.claims && saved.claims.length > 0) {
-				setJwtClaims(saved.claims);
-			}
-		}
-	}, []);
+	const tables = useMemo(
+		() =>
+			metaQuery.data?.tables.map((t) => `${t.schema}.${t.name}`).sort() ?? [],
+		[metaQuery.data],
+	);
+	const roles = useMemo(
+		() => rolesQuery.data?.map((r) => r.name).sort() ?? [],
+		[rolesQuery.data],
+	);
 
-	useEffect(() => {
-		const tableParam = searchParams.get("table");
-		if (tableParam) {
-			setSelectedTable(tableParam);
-		}
-	}, [searchParams]);
+	const primaryKeys = rowAccessQuery.data?.primaryKeys ?? [];
+	const rowColumns = rowAccessQuery.data?.columns ?? [];
+	const tableRows = rowAccessQuery.data?.rows ?? [];
 
-	// Cmd+Enter to run
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const isModifier = e.metaKey || e.ctrlKey;
 			if (isModifier && e.key === "Enter") {
 				e.preventDefault();
-				if (selectedRole && selectedTable && !simulateMutation.isPending) {
-					handleRun();
-				}
+				handleRun();
 			}
 		};
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [selectedRole, selectedTable, simulateMutation.isPending]);
+	}, []);
 
-	const tables =
-		metaQuery.data?.tables.map((t) => `${t.schema}.${t.name}`).sort() ?? [];
+	useEffect(() => {
+		saveConfig(config);
+	}, [config]);
 
-	const tableColumns = useMemo(() => {
-		if (!selectedTable || !metaQuery.data) return [];
-		const [schema, table] = selectedTable.split(".");
-		const tableInfo = metaQuery.data.tables.find(
-			(t) => t.schema === schema && t.name === table,
-		);
-		return tableInfo?.columns.map((c) => c.name) ?? [];
-	}, [selectedTable, metaQuery.data]);
+	useEffect(() => {
+		setResults(null);
+	}, [config.role, config.table, config.scope]);
 
-	const policyTableSet = new Set(
-		metaQuery.data?.policies.map((p) => `${p.schema}.${p.table}`) ?? [],
-	);
-	const rlsCoverage = metaQuery.data
-		? Math.round(
-				(metaQuery.data.tables.filter((t) =>
-					policyTableSet.has(`${t.schema}.${t.name}`),
-				).length /
-					metaQuery.data.tables.length) *
-					100,
-			)
-		: 0;
+	const claimsObject = useMemo(() => {
+		const obj: Record<string, unknown> = {};
+		for (const claim of config.claims) {
+			if (claim.key) {
+				obj[claim.key] = claim.value;
+			}
+		}
+		return obj;
+	}, [config.claims]);
 
-	// Get relevant policies for selected table
-	const relevantPolicies = useMemo(() => {
-		if (!selectedTable || !metaQuery.data) return [];
-		const [schema, table] = selectedTable.split(".");
-		return metaQuery.data.policies.filter(
-			(p) => p.schema === schema && p.table === table,
-		);
-	}, [selectedTable, metaQuery.data]);
+	const canRun = useMemo(() => {
+		if (!config.role || !config.table) return false;
+		if (config.scope === "row" && !selectedRowData) return false;
+		return true;
+	}, [config.role, config.table, config.scope, selectedRowData]);
 
 	const handleRun = async () => {
-		if (!selectedRole || !selectedTable) return;
+		if (!canRun) return;
+		setIsRunning(true);
+		setResults(null);
 
-		const [schema, table] = selectedTable.split(".");
-		let claims: Record<string, unknown> = {};
-
-		if (rawJsonMode) {
-			try {
-				claims = JSON.parse(rawJson);
-			} catch {
-				return;
-			}
-		} else {
-			for (const claim of jwtClaims) {
-				if (claim.key) {
-					try {
-						claims[claim.key] = JSON.parse(claim.value);
-					} catch {
-						claims[claim.key] = claim.value;
+		try {
+			if (config.scope === "table") {
+				const result = await simulateMutation.mutateAsync({
+					schema: schema,
+					table: tableName,
+					role: config.role,
+					jwtClaims: claimsObject,
+				});
+				setResults({ type: "table", data: result });
+			} else {
+				const pkValues: Record<string, unknown> = {};
+				for (const pk of primaryKeys) {
+					const val = selectedRowData?.[pk];
+					if (val !== undefined) {
+						pkValues[pk] = val;
 					}
 				}
+				const result = await rowAccessMutation.mutateAsync({
+					schema: schema,
+					table: tableName,
+					pkValues,
+					jwtClaims: claimsObject,
+					role: config.role,
+				});
+				setResults({ type: "row", data: result });
+			}
+		} catch (e) {
+			setResults({ type: "error", error: (e as Error).message });
+		} finally {
+			setIsRunning(false);
+		}
+	};
+
+	const handleSelectRow = (row: Record<string, unknown>) => {
+		setSelectedRowData(row);
+		const pkValues: Record<string, unknown> = {};
+		for (const pk of primaryKeys) {
+			const val = row[pk];
+			if (val !== undefined) {
+				pkValues[pk] = val;
 			}
 		}
-
-		let seedRowsToUse: Array<Record<string, unknown>> | undefined;
-		if (seedRowsJsonMode) {
-			try {
-				const parsed = JSON.parse(seedRowsJson);
-				if (Array.isArray(parsed) && parsed.length > 0) {
-					seedRowsToUse = parsed;
-				}
-			} catch {
-				return;
-			}
-		} else if (seedRows.length > 0) {
-			const valid = seedRows.filter((row) =>
-				Object.values(row).some((v) => v !== ""),
-			);
-			if (valid.length > 0) {
-				seedRowsToUse = valid;
-			}
-		}
-
-		setPersona({
-			role: selectedRole,
-			claims,
-			table: selectedTable,
-			lastRunAt: Date.now(),
-		});
-
-		saveConfig({
-			role: selectedRole,
-			table: selectedTable,
-			claims: jwtClaims,
-		});
-
-		simulateMutation.mutate({
-			schema,
-			table,
-			role: selectedRole,
-			jwtClaims: Object.keys(claims).length > 0 ? claims : undefined,
-			seedRows: seedRowsToUse,
-		});
+		const rowIdStr = Object.entries(pkValues)
+			.map(([k, v]) => `${k}=${v}`)
+			.join(",");
+		setConfig({ ...config, rowId: rowIdStr });
 	};
 
-	const addClaimRow = () => {
-		setJwtClaims([...jwtClaims, { key: "", value: "" }]);
+	const updateConfig = (updates: Partial<SimulateConfig>) => {
+		setConfig((prev) => ({ ...prev, ...updates }));
+		setResults(null);
 	};
 
-	const removeClaimRow = (index: number) => {
-		setJwtClaims(jwtClaims.filter((_, i) => i !== index));
-	};
-
-	const updateClaim = (index: number, field: keyof JwtClaim, value: string) => {
-		const updated = [...jwtClaims];
-		updated[index][field] = value;
-		setJwtClaims(updated);
-	};
-
-	const handleRawJsonChange = (value: string) => {
-		setRawJson(value);
-		try {
-			JSON.parse(value);
-			setRawJsonError("");
-		} catch {
-			setRawJsonError("Invalid JSON");
-		}
-	};
-
-	const handleSeedRowsJsonChange = (value: string) => {
-		setSeedRowsJson(value);
-		try {
-			JSON.parse(value);
-			setSeedRowsJsonError("");
-		} catch {
-			setSeedRowsJsonError("Invalid JSON");
-		}
-	};
-
-	const addSeedRow = () => {
-		const newRow: SeedRow = {};
-		if (tableColumns.length > 0) {
-			for (const col of tableColumns) {
-				newRow[col] = "";
-			}
-		}
-		setSeedRows([...seedRows, newRow]);
-	};
-
-	const removeSeedRow = (index: number) => {
-		setSeedRows(seedRows.filter((_, i) => i !== index));
-	};
-
-	const updateSeedRow = (index: number, column: string, value: string) => {
-		const updated = [...seedRows];
-		updated[index][column] = value;
-		setSeedRows(updated);
-	};
-
-	const switchToJsonMode = () => {
-		const json = JSON.stringify(seedRows, null, 2);
-		setSeedRowsJson(json);
-		setSeedRowsJsonMode(true);
-	};
-
-	const switchToFormMode = () => {
-		try {
-			const parsed = JSON.parse(seedRowsJson);
-			if (Array.isArray(parsed)) {
-				setSeedRows(parsed as SeedRow[]);
-			}
-		} catch {
-			// keep current form data if JSON is invalid
-		}
-		setSeedRowsJsonMode(false);
-	};
-
-	const copyRowToClipboard = async (row: Record<string, unknown>) => {
-		try {
-			await navigator.clipboard.writeText(JSON.stringify(row, null, 2));
-		} catch {
-			const textArea = document.createElement("textarea");
-			textArea.value = JSON.stringify(row, null, 2);
-			document.body.appendChild(textArea);
-			textArea.select();
-			document.execCommand("copy");
-			document.body.removeChild(textArea);
-		}
-	};
-
-	const rolesLoading = rolesQuery.isLoading;
-	const metaLoading = metaQuery.isLoading;
-	const tablesLoading = metaLoading;
-	const canRun = selectedRole && selectedTable && !simulateMutation.isPending;
+	const tableResults =
+		(results as { type?: string; data?: unknown })?.type === "table"
+			? (
+					results as {
+						type?: string;
+						data?: { columns?: string[]; rows?: Record<string, unknown>[] };
+					}
+				).data
+			: null;
+	const rowResults =
+		(results as { type?: string; data?: unknown })?.type === "row"
+			? (
+					results as {
+						type?: string;
+						data?: {
+							allowed?: boolean;
+							appliedPolicies?: string[];
+							rowSnapshot?: Record<string, unknown>;
+						};
+					}
+				).data
+			: null;
 
 	return (
 		<div className="flex h-full">
-			<div className="flex w-[280px] flex-shrink-0 flex-col border-border border-r bg-card">
+			<div className="flex w-[320px] shrink-0 flex-col border-input border-r bg-card">
 				<div className="flex-shrink-0 px-3 pt-3 pb-2">
-					<h1 className="font-semibold text-sm">Persona Simulation</h1>
+					<h1 className="font-semibold text-sm">Simulate</h1>
 					<p className="text-[11px] text-muted-foreground">
-						Simulate RLS as a specific role
+						Test RLS policies with role + claims
 					</p>
 				</div>
 
 				<div className="flex flex-1 flex-col overflow-hidden">
 					<div className="flex-1 overflow-y-auto px-3">
-						<div className="space-y-4">
+						<div className="space-y-3">
 							<div className="space-y-2">
-								<label className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-									Role
-								</label>
-								<Select value={selectedRole} onValueChange={setSelectedRole}>
-									<SelectTrigger className="h-8 text-xs">
-										<SelectValue placeholder="Select role..." />
-									</SelectTrigger>
-									<SelectContent>
-										{rolesLoading ? (
-											<div className="p-2 text-muted-foreground text-xs">
-												Loading...
-											</div>
-										) : (
-											rolesQuery.data?.map((role) => (
-												<SelectItem
-													key={role.name}
-													value={role.name}
-													className="text-xs"
-												>
-													{role.name}
+								<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+									Scope
+								</span>
+								<ScopeToggle
+									scope={config.scope}
+									onChange={(scope) => updateConfig({ scope })}
+								/>
+							</div>
+
+							<div className="flex">
+								<div className="flex-1 space-y-2">
+									<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+										Role
+									</span>
+									<Select
+										value={config.role}
+										onValueChange={(value) => updateConfig({ role: value })}
+									>
+										<SelectTrigger className="h-8">
+											<SelectValue placeholder="Select role" />
+										</SelectTrigger>
+										<SelectContent>
+											{roles.map((role) => (
+												<SelectItem key={role} value={role}>
+													{role}
 												</SelectItem>
-											))
-										)}
-									</SelectContent>
-								</Select>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="flex-1 space-y-2">
+									<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+										Table
+									</span>
+									<Select
+										value={config.table}
+										onValueChange={(value) =>
+											updateConfig({ table: value, rowId: "" })
+										}
+									>
+										<SelectTrigger className="h-8">
+											<SelectValue placeholder="Select table" />
+										</SelectTrigger>
+										<SelectContent>
+											{tables.map((t) => (
+												<SelectItem key={t} value={t}>
+													{t}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
 							</div>
-
-							<div className="border-white/5 border-b" />
 
 							<div className="space-y-2">
-								<label className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-									JWT Claims
-								</label>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => setRawJsonMode(false)}
-										className={cn(
-											"rounded px-1.5 py-0.5 text-[10px] transition-colors",
-											!rawJsonMode
-												? "bg-muted text-foreground"
-												: "text-muted-foreground hover:text-foreground",
-										)}
-									>
-										Key/Value
-									</button>
-									<button
-										type="button"
-										onClick={() => setRawJsonMode(true)}
-										className={cn(
-											"rounded px-1.5 py-0.5 text-[10px] transition-colors",
-											rawJsonMode
-												? "bg-muted text-foreground"
-												: "text-muted-foreground hover:text-foreground",
-										)}
-									>
-										Raw JSON
-									</button>
-								</div>
-
-								{rawJsonMode ? (
-									<div className="space-y-1">
-										<textarea
-											value={rawJson}
-											onChange={(e) => handleRawJsonChange(e.target.value)}
-											placeholder='{"user_id": 123}'
-											className={cn(
-												"min-h-[80px] w-full rounded border border-border bg-background p-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none",
-												rawJsonError && "border-red-500",
-											)}
-										/>
-										{rawJsonError && (
-											<p className="text-[10px] text-red-400">{rawJsonError}</p>
-										)}
-									</div>
-								) : (
-									<div className="space-y-1">
-										{jwtClaims.map((claim, index) => (
-											<div key={index} className="flex items-center gap-1">
-												<input
-													type="text"
-													value={claim.key}
-													onChange={(e) =>
-														updateClaim(index, "key", e.target.value)
-													}
-													placeholder="key"
-													className="h-7 w-[35%] rounded-l border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-												/>
-												<input
-													type="text"
-													value={claim.value}
-													onChange={(e) =>
-														updateClaim(index, "value", e.target.value)
-													}
-													placeholder="value"
-													className="h-7 w-[65%] rounded-r border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-												/>
-												<button
-													type="button"
-													onClick={() => removeClaimRow(index)}
-													className="flex h-7 w-7 items-center justify-center rounded border border-border text-muted-foreground hover:bg-red-500/20 hover:text-red-400"
-												>
-													<Trash2 className="size-3" />
-												</button>
-											</div>
-										))}
-										<button
-											type="button"
-											onClick={addClaimRow}
-											className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
-										>
-											<Plus className="size-3" />
-											Add Claim
-										</button>
-									</div>
-								)}
-							</div>
-
-							<div className="border-white/5 border-b" />
-
-							<details className="group">
-								<summary className="flex cursor-pointer list-outside items-center gap-2 font-medium text-[10px] text-muted-foreground uppercase tracking-wider hover:text-foreground">
-									<span>Seed Rows</span>
-									{(seedRows.filter((r) =>
-										Object.values(r).some((v) => v !== ""),
-									).length > 0 ||
-										(seedRowsJsonMode &&
-											seedRowsJson !== "[]" &&
-											seedRowsJson.trim() !== "")) && (
-										<span className="flex items-center gap-1 rounded bg-green-500/20 px-1.5 py-0.5 text-[9px] text-green-400">
-											{seedRowsJsonMode
-												? (() => {
-														try {
-															const parsed = JSON.parse(seedRowsJson);
-															return Array.isArray(parsed) ? parsed.length : 0;
-														} catch {
-															return 0;
-														}
-													})()
-												: seedRows.filter((r) =>
-														Object.values(r).some((v) => v !== ""),
-													).length}
-										</span>
-									)}
-								</summary>
-								<div className="mt-2 space-y-2">
-									<div className="flex items-center gap-2">
-										<button
-											type="button"
-											onClick={() => {
-												setSeedRowsJsonMode(false);
-												switchToFormMode();
-											}}
-											className={cn(
-												"rounded px-1.5 py-0.5 text-[10px] transition-colors",
-												!seedRowsJsonMode
-													? "bg-muted text-foreground"
-													: "text-muted-foreground hover:text-foreground",
-											)}
-										>
-											Form
-										</button>
-										<button
-											type="button"
-											onClick={switchToJsonMode}
-											className={cn(
-												"rounded px-1.5 py-0.5 text-[10px] transition-colors",
-												seedRowsJsonMode
-													? "bg-muted text-foreground"
-													: "text-muted-foreground hover:text-foreground",
-											)}
-										>
-											JSON
-										</button>
-									</div>
-
-									{seedRowsJsonMode ? (
-										<div className="space-y-1">
-											<textarea
-												value={seedRowsJson}
-												onChange={(e) =>
-													handleSeedRowsJsonChange(e.target.value)
-												}
-												placeholder='[\n  { "id": "uuid-here", "user_id": "uuid-here", "tenant_id": "uuid-here" }\n]'
-												className={cn(
-													"min-h-[80px] w-full rounded border border-border bg-black/30 p-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none",
-													seedRowsJsonError && "border-red-500",
-												)}
+								<span className="flex items-center gap-1 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+									JWT Claims{" "}
+									<span className="text-[9px] normal-case">(optional)</span>
+								</span>
+								<div className="space-y-2">
+									{config.claims.map((claim, index) => (
+										<div key={index} className="flex items-center gap-1">
+											<input
+												type="text"
+												value={claim.key}
+												onChange={(e) => {
+													const updated = [...config.claims];
+													updated[index].key = e.target.value;
+													updateConfig({ claims: updated });
+												}}
+												placeholder="key"
+												className="h-7 w-[35%] rounded-l border border-input bg-background px-2 font-mono text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none"
 											/>
-											{seedRowsJsonError && (
-												<p className="text-[10px] text-red-400">
-													{seedRowsJsonError}
-												</p>
-											)}
-										</div>
-									) : (
-										<div className="space-y-1">
-											{seedRows.map((row, rowIndex) => (
-												<div
-													key={rowIndex}
-													className="flex flex-wrap items-center gap-1"
-												>
-													{tableColumns.length > 0 ? (
-														tableColumns.map((col) => (
-															<div
-																key={col}
-																className="flex items-center gap-1"
-															>
-																<span className="w-16 truncate text-[9px] text-muted-foreground">
-																	{col}
-																</span>
-																<input
-																	type="text"
-																	value={row[col] ?? ""}
-																	onChange={(e) =>
-																		updateSeedRow(rowIndex, col, e.target.value)
-																	}
-																	placeholder={col}
-																	className="h-7 w-24 rounded border border-border bg-background px-2 font-mono text-[10px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-																/>
-															</div>
-														))
-													) : (
-														<>
-															<input
-																type="text"
-																value={row.key ?? ""}
-																onChange={(e) =>
-																	updateSeedRow(rowIndex, "key", e.target.value)
-																}
-																placeholder="key"
-																className="h-7 w-[35%] rounded-l border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-															/>
-															<input
-																type="text"
-																value={row.value ?? ""}
-																onChange={(e) =>
-																	updateSeedRow(
-																		rowIndex,
-																		"value",
-																		e.target.value,
-																	)
-																}
-																placeholder="value"
-																className="h-7 w-[65%] rounded-r border border-border bg-background px-2 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-															/>
-														</>
-													)}
-													<button
-														type="button"
-														onClick={() => removeSeedRow(rowIndex)}
-														className="flex h-7 w-7 items-center justify-center rounded border border-border text-muted-foreground hover:bg-red-500/20 hover:text-red-400"
-													>
-														<Trash2 className="size-3" />
-													</button>
-												</div>
-											))}
+											<input
+												type="text"
+												value={claim.value}
+												onChange={(e) => {
+													const updated = [...config.claims];
+													updated[index].value = e.target.value;
+													updateConfig({ claims: updated });
+												}}
+												placeholder="value"
+												className="h-7 w-[65%] rounded-r border border-input bg-background px-2 font-mono text-xs placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+											/>
 											<button
 												type="button"
-												onClick={addSeedRow}
-												className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+												onClick={() => {
+													const updated = config.claims.filter(
+														(_, i) => i !== index,
+													);
+													updateConfig({ claims: updated });
+												}}
+												className="flex h-7 w-7 items-center justify-center rounded border border-input text-muted-foreground hover:bg-red-500/20 hover:text-red-400"
 											>
-												<Plus className="size-3" />
-												Add Row
+												<Trash2 className="size-3" />
 											</button>
 										</div>
-									)}
-
-									{tableColumns.length > 0 && (
-										<p className="text-[9px] text-muted-foreground">
-											Valid columns: {tableColumns.join(", ")}
-										</p>
-									)}
+									))}
+									<button
+										type="button"
+										onClick={() => {
+											updateConfig({
+												claims: [...config.claims, { key: "", value: "" }],
+											});
+										}}
+										className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+									>
+										<Plus className="size-3" />
+										Add Claim
+									</button>
 								</div>
-							</details>
+							</div>
 
-							<div className="border-white/5 border-b" />
+							{config.scope === "row" && config.table && (
+								<div className="space-y-2">
+									<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+										Row
+									</span>
+									<Select
+										value={config.rowId}
+										onValueChange={(value) => {
+											const row = tableRows.find((r) => {
+												const pkVals = primaryKeys
+													.map((pk) => `${pk}=${r[pk]}`)
+													.join(",");
+												return pkVals === value;
+											});
+											if (row) handleSelectRow(row);
+										}}
+									>
+										<SelectTrigger className="h-8">
+											<SelectValue placeholder="Select row" />
+										</SelectTrigger>
+										<SelectContent>
+											{tableRows.map((row, idx) => {
+												const pkVals = primaryKeys
+													.map((pk) => `${pk}=${row[pk]}`)
+													.join(",");
+												return (
+													<SelectItem key={idx} value={pkVals}>
+														{pkVals}
+													</SelectItem>
+												);
+											})}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
 
-							<div className="space-y-2">
-								<label className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-									Table
-								</label>
-								<Select value={selectedTable} onValueChange={setSelectedTable}>
-									<SelectTrigger className="h-8 text-xs">
-										<SelectValue placeholder="Select table..." />
-									</SelectTrigger>
-									<SelectContent>
-										{tablesLoading ? (
-											<div className="p-2 text-muted-foreground text-xs">
-												Loading...
-											</div>
-										) : (
-											tables.map((table) => (
-												<SelectItem
-													key={table}
-													value={table}
-													className="font-mono text-xs"
-												>
-													{table}
-												</SelectItem>
-											))
+							{config.scope === "row" && config.table && selectedRowData && (
+								<div className="space-y-2">
+									<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+										Row Preview
+									</span>
+									<pre className="max-h-[80px] overflow-auto rounded-md border border-input bg-background p-2 font-mono text-[10px] text-foreground">
+										{JSON.stringify(
+											rowColumns.slice(0, 4).reduce(
+												(acc, col) => {
+													if (selectedRowData[col] !== undefined) {
+														acc[col] = selectedRowData[col];
+													}
+													return acc;
+												},
+												{} as Record<string, unknown>,
+											),
+											null,
+											2,
 										)}
-									</SelectContent>
-								</Select>
+									</pre>
+								</div>
+							)}
+
+							<div className="pt-2">
+								<Button
+									onClick={handleRun}
+									disabled={!canRun || isRunning}
+									className="w-full"
+								>
+									{isRunning ? (
+										<span className="flex items-center gap-2">Running...</span>
+									) : (
+										<span className="flex items-center gap-2">
+											<Play className="h-3.5 w-3.5" />
+											Run Simulation
+										</span>
+									)}
+								</Button>
+								<p className="mt-1 text-center text-[10px] text-muted-foreground">
+									Cmd + Enter
+								</p>
 							</div>
 						</div>
-					</div>
-
-					<div className="sticky bottom-0 border-white/5 border-t bg-card p-3">
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="block w-full">
-									<Button
-										onClick={handleRun}
-										disabled={!canRun}
-										className={cn(
-											"w-full",
-											!canRun && "cursor-not-allowed opacity-50",
-										)}
-									>
-										{simulateMutation.isPending ? (
-											<span className="flex items-center gap-2">
-												<span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-												Running...
-											</span>
-										) : (
-											<span className="flex items-center">
-												<Play className="mr-2 size-4" />
-												Run
-												<span className="ml-2 text-[10px] text-muted-foreground">
-													⌘↵
-												</span>
-											</span>
-										)}
-									</Button>
-								</span>
-							</TooltipTrigger>
-							{!canRun && (
-								<TooltipContent>
-									<p className="text-[10px]">Select a role and table to run</p>
-								</TooltipContent>
-							)}
-						</Tooltip>
 					</div>
 				</div>
 			</div>
 
-			<div className="flex flex-1 flex-col">
-				<div className="flex flex-shrink-0 items-center justify-between border-border border-b px-4 py-2">
-					<div className="flex items-center gap-2">
-						<Table className="size-4 text-muted-foreground" />
-						<span className="font-mono text-xs">
-							{simulateMutation.variables?.table ?? "—"}
-						</span>
+			<div className="flex flex-1 flex-col overflow-hidden">
+				{!results && (
+					<div className="flex h-full items-center justify-center text-muted-foreground">
+						<div className="text-center">
+							<Play className="mx-auto h-8 w-8 opacity-50" />
+							<p className="mt-2 text-sm">Run simulation to see results</p>
+						</div>
 					</div>
-					{!simulateMutation.isPending && metaQuery.data && (
-						<div className="flex items-center gap-1 rounded bg-muted px-2 py-1 text-[10px] text-muted-foreground">
-							{rlsCoverage}% RLS coverage
+				)}
+
+				{(results as { type?: string; error?: string })?.type === "error" && (
+					<div className="flex-1 overflow-auto p-4">
+						<ApiErrorCard
+							error={{
+								message:
+									(results as { error?: string }).error || "Unknown error",
+							}}
+						/>
+					</div>
+				)}
+
+				{config.scope === "table" && tableResults && (
+					<div className="flex flex-1 flex-col overflow-hidden">
+						<div className="border-input border-b px-4 py-2">
+							<span className="font-medium text-foreground text-sm">
+								Visible rows: {tableResults.rows?.length ?? 0}
+							</span>
 						</div>
-					)}
-				</div>
-
-				<div className="flex-1 overflow-auto">
-					{!simulateMutation.data &&
-						!simulateMutation.isPending &&
-						!simulateMutation.error && (
-							<div className="flex h-full items-center justify-center">
-								<div className="flex flex-col items-center gap-2 text-center">
-									<Table className="size-10 text-muted-foreground/30" />
-									<p className="font-medium text-sm">No simulation run yet</p>
-									<p className="text-muted-foreground text-xs">
-										Select a role and table, then hit Run
-									</p>
-								</div>
-							</div>
-						)}
-
-					{simulateMutation.isPending && (
-						<div className="p-4">
-							<div className="space-y-2">
-								{[1, 2, 3, 4].map((i) => (
-									<div key={i} className="flex gap-2">
-										<div className="h-6 w-24 animate-pulse rounded bg-white/5" />
-										<div className="h-6 w-32 animate-pulse rounded bg-white/5" />
-										<div className="h-6 w-20 animate-pulse rounded bg-white/5" />
-										<div className="h-6 w-28 animate-pulse rounded bg-white/5" />
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-
-					{simulateMutation.error && (
-						<div className="flex h-full items-center justify-center p-4">
-							<ApiErrorCard
-								error={simulateMutation.error}
-								retry={() =>
-									simulateMutation.mutate({
-										schema: selectedTable.split(".")[0] || "",
-										table: selectedTable.split(".")[1] || "",
-										role: selectedRole,
-									})
-								}
-								endpoint="/api/simulate"
-							/>
-						</div>
-					)}
-
-					{simulateMutation.data?.error && (
-						<div className="flex h-full items-center justify-center p-4">
-							{simulateMutation.data.seedError ? (
-								<div className="flex w-full max-w-md gap-4">
-									<div className="flex-1 rounded-md border border-amber-500/30 bg-amber-500/10 p-4">
-										<div className="flex items-center gap-2">
-											<AlertTriangle className="size-4 text-amber-400" />
-											<p className="font-medium text-amber-400 text-xs">
-												Seed row error
-											</p>
-										</div>
-										<p className="mt-2 text-muted-foreground text-xs">
-											{simulateMutation.data.error}
-										</p>
-										<p className="mt-2 text-[10px] text-muted-foreground/70">
-											Check that your seed row columns match the table schema
+						<div className="flex-1 overflow-auto">
+							{tableResults.rows?.length === 0 ? (
+								<div className="flex h-full items-center justify-center text-muted-foreground">
+									<div className="text-center">
+										<AlertTriangle className="mx-auto h-6 w-6 opacity-50" />
+										<p className="mt-2 text-sm">
+											No rows visible under current policies
 										</p>
 									</div>
 								</div>
 							) : (
-								<div className="rounded-md border border-red-500/30 bg-red-500/10 p-4">
-									<p className="font-medium text-red-400 text-xs">Error</p>
-									<p className="mt-1 text-muted-foreground text-xs">
-										{simulateMutation.data.error}
-									</p>
-								</div>
-							)}
-						</div>
-					)}
-
-					{simulateMutation.data &&
-						!simulateMutation.data.error &&
-						simulateMutation.data.rows.length > 0 && (
-							<div className="relative">
-								<div className="overflow-x-auto">
-									<table className="border-collapse">
-										<thead>
-											<tr>
-												{simulateMutation.data.columns.map((col) => (
-													<th
-														key={col}
-														className="border-border border-b bg-muted/30 px-3 py-1.5 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-wider"
-													>
-														{col}
-													</th>
-												))}
-												<th className="w-10 border-border border-b bg-muted/30" />
-											</tr>
-										</thead>
-										<tbody>
-											{simulateMutation.data.rows.map((row, i) => {
-												const columnValues = simulateMutation.data.columns.map(
-													(col) => row[col],
-												);
-												return (
-													<tr
-														key={i}
-														className="group/row cursor-pointer hover:bg-white/5"
-														onClick={() => {
-															setSelectedRow(row);
-															setSelectedColumns(
-																simulateMutation.data!.columns,
-															);
-														}}
-													>
-														{simulateMutation.data.columns.map((col) => (
-															<td
-																key={col}
-																className="border-border border-b px-3 py-1.5 font-mono text-[11px]"
-															>
-																<CellRenderer
-																	value={row[col]}
-																	allColumnValues={columnValues}
-																/>
-															</td>
-														))}
-														<td className="border-border border-b px-2 py-1.5 text-center">
-															<button
-																type="button"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	copyRowToClipboard(row);
-																}}
-																className="opacity-0 hover:text-foreground group-hover/row:opacity-100"
-															>
-																<Clipboard className="size-3 text-muted-foreground hover:text-foreground" />
-															</button>
+								<table className="w-full text-left text-xs">
+									<thead className="sticky top-0 bg-background">
+										<tr>
+											{tableResults.columns?.map((col: string) => (
+												<th
+													key={col}
+													className="border-input border-b px-3 py-2 font-medium text-muted-foreground"
+												>
+													{col}
+												</th>
+											))}
+										</tr>
+									</thead>
+									<tbody>
+										{tableResults.rows?.map(
+											(row: Record<string, unknown>, idx: number) => (
+												<tr
+													key={idx}
+													className="border-input border-b hover:bg-accent"
+												>
+													{tableResults.columns?.map((col: string) => (
+														<td
+															key={col}
+															className="max-w-[200px] truncate px-3 py-2 font-mono text-foreground"
+														>
+															{formatCellValue(row[col])}
 														</td>
-													</tr>
-												);
-											})}
-										</tbody>
-									</table>
-								</div>
-								<div className="pointer-events-none absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-background to-transparent" />
-							</div>
-						)}
-
-					{simulateMutation.data &&
-						!simulateMutation.data.error &&
-						simulateMutation.data.rows.length === 0 && (
-							<div className="flex h-full items-center justify-center">
-								<div className="text-muted-foreground text-xs">
-									No rows returned
-								</div>
-							</div>
-						)}
-				</div>
-
-				{simulateMutation.data && !simulateMutation.data.error && (
-					<div className="flex h-7 flex-shrink-0 items-center justify-between border-border border-t bg-card px-3">
-						<div className="text-[11px] text-muted-foreground">
-							{simulateMutation.data.rows.length} row
-							{simulateMutation.data.rows.length !== 1 ? "s" : ""}
-							{relevantPolicies.length > 0 && (
-								<span className="ml-1">
-									· policies: {relevantPolicies.map((p) => p.name).join(", ")}
-								</span>
+													))}
+												</tr>
+											),
+										)}
+									</tbody>
+								</table>
 							)}
-							{simulateMutation.data.seedRowCount &&
-								simulateMutation.data.seedRowCount > 0 && (
-									<span className="ml-1 text-amber-400">
-										· {simulateMutation.data.seedRowCount} seed row
-										{simulateMutation.data.seedRowCount !== 1 ? "s" : ""}{" "}
-										injected
-									</span>
-								)}
 						</div>
 					</div>
 				)}
-			</div>
 
-			<RowDrawer
-				open={!!selectedRow}
-				onClose={() => setSelectedRow(null)}
-				row={selectedRow}
-				columns={selectedColumns}
-			/>
+				{config.scope === "row" && rowResults && (
+					<div className="flex flex-1 flex-col overflow-auto p-4">
+						<div
+							className={cn(
+								"flex items-center gap-2 rounded-lg border p-4",
+								rowResults.allowed
+									? "border-green-500/50 bg-green-500/10"
+									: "border-red-500/50 bg-red-500/10",
+							)}
+						>
+							{rowResults.allowed ? (
+								<>
+									<Check className="h-5 w-5 text-green-500" />
+									<span className="text-green-400">Allowed</span>
+								</>
+							) : (
+								<>
+									<X className="h-5 w-5 text-red-500" />
+									<span className="text-red-400">Denied</span>
+								</>
+							)}
+						</div>
+
+						<div className="mt-4 space-y-2">
+							<span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+								Applied Policies
+							</span>
+							{rowResults.appliedPolicies?.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No policies on this table
+								</p>
+							) : (
+								<div className="flex flex-wrap gap-1">
+									{rowResults.appliedPolicies?.map((policy: string) => (
+										<span
+											key={policy}
+											className="rounded-md bg-secondary px-2 py-1 font-mono text-foreground text-xs"
+										>
+											{policy}
+										</span>
+									))}
+								</div>
+							)}
+						</div>
+
+						{rowResults.rowSnapshot && (
+							<div className="mt-4 space-y-2">
+								<span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+									Row Snapshot
+								</span>
+								<pre className="overflow-auto rounded-md border border-input bg-background p-3 font-mono text-foreground text-xs">
+									{JSON.stringify(rowResults.rowSnapshot, null, 2)}
+								</pre>
+							</div>
+						)}
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }
+
+export default SimulatePage;

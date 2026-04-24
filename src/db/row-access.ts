@@ -29,6 +29,16 @@ export interface CheckRowAccessResult {
 	checkedAt: string;
 	rowSnapshot: Record<string, unknown>;
 	error?: string;
+	allowed?: boolean;
+	appliedPolicies?: string[];
+}
+
+export interface SingleRoleCheckResult {
+	allowed: boolean;
+	rowSnapshot: Record<string, unknown>;
+	appliedPolicies: string[];
+	checkedAt: string;
+	error?: string;
 }
 
 interface RoleInfo {
@@ -116,7 +126,14 @@ export async function checkRowAccess(
 	table: string,
 	pkValues: Record<string, unknown>,
 	jwtClaims: Record<string, unknown> = {},
-): Promise<CheckRowAccessResult> {
+	roleName?: string,
+): Promise<CheckRowAccessResult | SingleRoleCheckResult> {
+	const isSingleRole = roleName && roleName.length > 0;
+
+	if (isSingleRole) {
+		return checkRowAccessForRole(schema, table, pkValues, jwtClaims, roleName);
+	}
+
 	try {
 		const roles = await getLoginRoles();
 
@@ -240,6 +257,89 @@ export async function checkRowAccess(
 			cannotAccess: [],
 			checkedAt: new Date().toISOString(),
 			rowSnapshot: {},
+			error: message,
+		};
+	}
+}
+
+async function checkRowAccessForRole(
+	schema: string,
+	table: string,
+	pkValues: Record<string, unknown>,
+	jwtClaims: Record<string, unknown>,
+	roleName: string,
+): Promise<SingleRoleCheckResult> {
+	try {
+		const pkColumns = Object.keys(pkValues);
+		if (pkColumns.length === 0) {
+			return {
+				allowed: false,
+				rowSnapshot: {},
+				appliedPolicies: [],
+				checkedAt: new Date().toISOString(),
+				error: "No primary key values provided",
+			};
+		}
+
+		const qualifiedTable = `"${schema}"."${table}"`;
+		const whereClauseOriginal = pkColumns
+			.map((col, i) => `"${col}" = $${i + 1}`)
+			.join(" AND ");
+
+		const pkParams: (string | number | boolean | null | unknown)[] =
+			pkColumns.map((col) => pkValues[col]);
+
+		let rowSnapshot: Record<string, unknown> = {};
+		try {
+			const rowSnapshotResult = await catalogSql.unsafe(
+				`SELECT * FROM ${qualifiedTable} WHERE ${whereClauseOriginal} LIMIT 1`,
+				pkParams as Parameters<typeof catalogSql.unsafe>[1],
+			);
+			if (rowSnapshotResult.length > 0) {
+				rowSnapshot = rowSnapshotResult[0] as Record<string, unknown>;
+			}
+		} catch {
+			rowSnapshot = {};
+		}
+
+		let appliedPolicies: string[] = [];
+		let hasAccess = false;
+
+		await simulationSql.begin(async (tx) => {
+			await tx.unsafe(`SET ROLE "${roleName}"`);
+
+			if (Object.keys(jwtClaims).length > 0) {
+				const claimsJson = JSON.stringify(jwtClaims);
+				await tx.unsafe(`SET LOCAL request.jwt.claims = '${claimsJson}'`);
+			}
+
+			const policiesResult = await catalogSql.unsafe(
+				`SELECT policyname FROM pg_policies WHERE schemaname = ${schema} AND tablename = ${table}`,
+			);
+			appliedPolicies = policiesResult.map((p) => p.policyname);
+
+			const query = `SELECT 1 FROM ${qualifiedTable} WHERE ${whereClauseOriginal}`;
+			const result = await tx.unsafe(
+				query,
+				pkParams as Parameters<typeof tx.unsafe>[1],
+			);
+			hasAccess = result.length > 0;
+		});
+
+		return {
+			allowed: hasAccess,
+			rowSnapshot,
+			appliedPolicies,
+			checkedAt: new Date().toISOString(),
+		};
+	} catch (error) {
+		const message =
+			error instanceof Error ? error.message : "Failed to check row access";
+		return {
+			allowed: false,
+			rowSnapshot: {},
+			appliedPolicies: [],
+			checkedAt: new Date().toISOString(),
 			error: message,
 		};
 	}

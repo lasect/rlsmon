@@ -1,6 +1,5 @@
 import {
 	Camera,
-	ClipboardCheck,
 	Grid3x3,
 	Rows3,
 	ScrollText,
@@ -39,7 +38,7 @@ const navGroups: NavGroup[] = [
 	{
 		label: "SIMULATE",
 		hasBorder: true,
-		items: [{ label: "Persona", href: "/simulate", icon: UserCircle }],
+		items: [{ label: "Simulate", href: "/simulate", icon: UserCircle }],
 	},
 	{
 		label: "AUDIT",
@@ -57,14 +56,7 @@ const navGroups: NavGroup[] = [
 	{
 		label: "HISTORY",
 		hasBorder: true,
-		items: [
-			{ label: "Snapshots", href: "/history", icon: Camera },
-			{
-				label: "Migration Check",
-				href: "/history/migration",
-				icon: ClipboardCheck,
-			},
-		],
+		items: [{ label: "Snapshots", href: "/history", icon: Camera }],
 	},
 ];
 
