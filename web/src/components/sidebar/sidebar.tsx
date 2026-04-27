@@ -1,7 +1,6 @@
 import {
 	Camera,
 	Grid3x3,
-	Rows3,
 	ScrollText,
 	Settings,
 	ShieldAlert,
@@ -32,7 +31,6 @@ const navGroups: NavGroup[] = [
 			{ label: "Matrix", href: "/explore/matrix", icon: Grid3x3 },
 			{ label: "Policies", href: "/explore/policies", icon: ScrollText },
 			{ label: "Roles", href: "/explore/roles", icon: Users },
-			{ label: "Row Access", href: "/explore/row-access", icon: Rows3 },
 		],
 	},
 	{

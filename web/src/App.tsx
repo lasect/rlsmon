@@ -10,7 +10,6 @@ import { AuditCiPage } from "@/pages/audit/ci";
 import { MatrixPage } from "@/pages/explore/matrix";
 import { PoliciesPage } from "@/pages/explore/policies";
 import { RolesPage } from "@/pages/explore/roles";
-import { RowAccessPage } from "@/pages/explore/row-access";
 import { HistoryPage } from "@/pages/history";
 import { MigrationCheckPage } from "@/pages/history/migration";
 import { SnapshotDetailPage } from "@/pages/history/snapshot-detail";
@@ -26,7 +25,6 @@ const router = createBrowserRouter([
 			{ path: "explore/matrix", element: <MatrixPage /> },
 			{ path: "explore/policies", element: <PoliciesPage /> },
 			{ path: "explore/roles", element: <RolesPage /> },
-			{ path: "explore/row-access", element: <RowAccessPage /> },
 			{ path: "simulate", element: <SimulatePage /> },
 			{ path: "audit", element: <AuditPage /> },
 			{ path: "audit/ci", element: <AuditCiPage /> },

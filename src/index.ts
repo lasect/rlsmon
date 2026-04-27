@@ -7,6 +7,7 @@ import { createContext } from "./api/context";
 import { appRouter } from "./api/routers/index";
 import { closeConnections, testConnection } from "./db/connection";
 import { env } from "./env";
+import { renameSnapshot } from "./snapshots/storage";
 
 // Test database connection before starting
 const connectionResult = await testConnection();
@@ -43,6 +44,17 @@ app.use(
 
 app.get("/api/health", (c) => {
 	return c.text("OK");
+});
+
+app.post("/api/snapshots/rename", async (c) => {
+	try {
+		const { id, label } = await c.req.json<{ id: string; label: string }>();
+		renameSnapshot(id, label);
+		return c.json({ success: true });
+	} catch (e) {
+		const message = e instanceof Error ? e.message : "Unknown error";
+		return c.json({ error: message }, 400);
+	}
 });
 
 // Serve static files from the Vite build output

@@ -2,7 +2,6 @@ import {
 	CheckCircle,
 	FileText,
 	Loader2,
-	Shield,
 	ShieldAlert,
 	ShieldCheck,
 	Upload,
@@ -174,9 +173,9 @@ export function MigrationCheckPanel({
 	const isLoading = checkMutation.isPending;
 
 	return (
-		<div className="flex h-full gap-4">
+		<div className="flex h-full gap-1">
 			<div className="flex w-[400px] shrink-0 flex-col">
-				<div className="mb-3 flex gap-1">
+				<div className="mb-2 flex gap-1">
 					<button
 						type="button"
 						onClick={() => setInputMode("paste")}
@@ -246,84 +245,87 @@ export function MigrationCheckPanel({
 					<p className="mt-2 text-green-400 text-xs">{filename} loaded</p>
 				)}
 
-				<div className="mt-4">
-					<p className="mb-2 font-medium text-muted-foreground text-xs">
-						Check against
-					</p>
-					<div className="flex gap-1">
-						<button
-							type="button"
-							onClick={() => setCheckAgainst("live")}
-							disabled={snapshots.length === 0}
-							className={cn(
-								"flex-1 rounded px-2.5 py-1.5 font-medium text-xs transition-colors",
-								checkAgainst === "live"
-									? "bg-primary/10 text-primary"
-									: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
-								snapshots.length === 0 && "cursor-not-allowed opacity-50",
-							)}
-						>
-							Live database
-						</button>
-						<button
-							type="button"
-							onClick={() => setCheckAgainst("snapshot")}
-							disabled={snapshots.length === 0}
-							className={cn(
-								"flex-1 rounded px-2.5 py-1.5 font-medium text-xs transition-colors",
-								checkAgainst === "snapshot"
-									? "bg-primary/10 text-primary"
-									: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
-								snapshots.length === 0 && "cursor-not-allowed opacity-50",
-							)}
-						>
-							Snapshot
-						</button>
-					</div>
-
-					{checkAgainst === "snapshot" && snapshots.length > 0 && (
-						<select
-							value={selectedSnapshotId || ""}
-							onChange={(e) => setSelectedSnapshotId(e.target.value)}
-							className="mt-2 w-full rounded border border-border bg-card px-2.5 py-1.5 text-xs"
-						>
-							<option value="">Select a snapshot...</option>
-							{snapshots.map((s) => (
-								<option key={s.id} value={s.id}>
-									{s.label} · {s.createdAt}
+				<div className="mt-0 rounded-lg border border-border/50 bg-card/40 p-3">
+					<div className="space-y-4">
+						<div>
+							<label className="mb-1.5 block font-medium text-muted-foreground text-xs">
+								Target
+							</label>
+							<select
+								value={checkAgainst}
+								onChange={(e) =>
+									setCheckAgainst(e.target.value as "live" | "snapshot")
+								}
+								disabled={snapshots.length === 0}
+								className={cn(
+									"w-full rounded border border-border bg-[#0a0a0a] px-2.5 py-1.5 text-foreground text-xs",
+									"focus:border-primary focus:outline-none",
+									snapshots.length === 0 && "cursor-not-allowed opacity-50",
+								)}
+							>
+								<option value="live">Live Database</option>
+								<option value="snapshot" disabled={snapshots.length === 0}>
+									Snapshot
 								</option>
-							))}
-						</select>
-					)}
+							</select>
+						</div>
 
-					{snapshots.length === 0 && (
-						<p className="mt-2 text-muted-foreground text-xs">
-							No snapshots available
-						</p>
-					)}
-				</div>
-
-				<div className="mt-4">
-					<Button
-						onClick={handleCheck}
-						disabled={!sql.trim() || isLoading}
-						className="w-full bg-success text-success-foreground hover:bg-success/90"
-					>
-						{isLoading ? (
-							<>
-								<Loader2 className="mr-2 size-3.5 animate-spin" />
-								Checking...
-							</>
-						) : (
-							<>
-								<Shield className="mr-2 size-3.5" />
-								Check Migration
-							</>
+						{checkAgainst === "snapshot" && (
+							<div>
+								<label className="mb-1.5 block font-medium text-muted-foreground text-xs">
+									Snapshot
+								</label>
+								<select
+									value={selectedSnapshotId || ""}
+									onChange={(e) => setSelectedSnapshotId(e.target.value)}
+									className="w-full rounded border border-border bg-[#0a0a0a] px-2.5 py-1.5 text-foreground text-xs focus:border-primary focus:outline-none"
+								>
+									<option value="">Select a snapshot...</option>
+									{snapshots.map((s) => (
+										<option key={s.id} value={s.id}>
+											{s.label} · {s.createdAt}
+										</option>
+									))}
+								</select>
+							</div>
 						)}
-					</Button>
-					<p className="mt-1 text-center text-muted-foreground text-xs">
-						⌘+Enter to run
-					</p>
+
+						{snapshots.length === 0 && (
+							<p className="text-muted-foreground text-xs">
+								No snapshots available
+							</p>
+						)}
+
+						<p className="text-muted-foreground/60 text-xs">
+							Comparing SQL against{" "}
+							{checkAgainst === "snapshot" && selectedSnapshot
+								? selectedSnapshot.label
+								: "Live Database"}
+						</p>
+
+						<div className="space-y-1.5">
+							<Button
+								onClick={handleCheck}
+								disabled={!sql.trim() || isLoading}
+								className="h-8 w-full"
+							>
+								{isLoading ? (
+									<>
+										<Loader2 className="mr-1.5 size-3.5 animate-spin" />
+										Checking...
+									</>
+								) : (
+									<>
+										<ShieldCheck className="mr-1.5 size-3.5" />
+										Check Migration
+									</>
+								)}
+							</Button>
+							<p className="text-center text-muted-foreground/50 text-xs">
+								⌘+Enter to run
+							</p>
+						</div>
+					</div>
 				</div>
 			</div>
 

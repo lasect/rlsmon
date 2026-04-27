@@ -10,7 +10,6 @@ const routeLabels: Record<string, string> = {
 	"/explore/matrix": "Explore / Matrix",
 	"/explore/policies": "Explore / Policies",
 	"/explore/roles": "Explore / Roles",
-	"/explore/row-access": "Explore / Row Access",
 	"/simulate": "Simulate / Persona",
 	"/audit": "Audit / Overview",
 	"/audit/ci": "Audit / CI Mode",
