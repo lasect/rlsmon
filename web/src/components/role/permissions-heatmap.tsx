@@ -5,6 +5,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { RoleInfo } from "@/types/roles";
 
 interface AccessCell {
 	tableSchema: string;
@@ -16,23 +17,15 @@ interface AccessCell {
 	delete: boolean;
 }
 
-interface RoleData {
-	name: string;
-	isSuperuser: boolean;
-	canLogin: boolean;
-	memberOf: string[];
-}
-
 interface RolePermissionsHeatmapProps {
-	role: RoleData;
-	allRoles: RoleData[];
+	role: RoleInfo;
 	matrix: AccessCell[];
 }
 
 export function RolePermissionsHeatmap({
 	role,
 	matrix,
-}: Omit<RolePermissionsHeatmapProps, "allRoles">) {
+}: RolePermissionsHeatmapProps) {
 	const effectiveRoles = new Set<string>([
 		role.name,
 		...role.memberOf,
@@ -100,6 +93,14 @@ export function RolePermissionsHeatmap({
 		);
 	}
 
+	const OPERATIONS = ["select", "insert", "update", "delete"] as const;
+	const OP_LABELS: Record<string, string> = {
+		select: "SELECT",
+		insert: "INSERT",
+		update: "UPDATE",
+		delete: "DELETE",
+	};
+
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center justify-between">
@@ -118,10 +119,10 @@ export function RolePermissionsHeatmap({
 							<th className="sticky left-0 z-10 w-28 border-border border-b bg-background px-2 py-1 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
 								Table
 							</th>
-							{(["select", "insert", "update", "delete"] as const).map((op) => (
+							{OPERATIONS.map((op) => (
 								<th
 									key={op}
-									className="min-w-[44px] border-border border-b px-2 py-1 text-center font-medium text-[10px] text-muted-foreground uppercase tracking-wider"
+									className="min-w-[56px] border-border border-b px-2 py-1 text-center font-medium text-[10px] text-muted-foreground uppercase tracking-wider"
 								>
 									{op.slice(0, 1).toUpperCase()}
 								</th>
@@ -134,48 +135,46 @@ export function RolePermissionsHeatmap({
 								<td className="sticky left-0 z-10 bg-background px-2 py-0.5">
 									<code className="font-mono text-[10px]">{tp.table}</code>
 								</td>
-								{(["select", "insert", "update", "delete"] as const).map(
-									(op) => {
-										const allowed = tp[op];
-										return (
-											<td key={op} className="px-1 py-0.5 text-center">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<div
-															className={cn(
-																"inline-flex size-5 cursor-default items-center justify-center rounded text-[10px]",
-																allowed
-																	? "bg-rls-grant-muted/30 text-rls-grant"
-																	: "bg-rls-deny-muted/20 text-rls-deny-muted",
-															)}
-														>
-															{allowed ? (
-																<Check className="size-3" />
-															) : (
-																<X className="size-3" />
-															)}
-														</div>
-													</TooltipTrigger>
-													<TooltipContent side="top" className="text-[11px]">
-														<div className="flex flex-col gap-0.5">
-															<span className="font-medium">
-																{op.toUpperCase()} on {tp.schema}.{tp.table}
+								{OPERATIONS.map((op) => {
+									const allowed = tp[op];
+									return (
+										<td key={op} className="px-1 py-0.5 text-center">
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<div
+														className={cn(
+															"inline-flex size-5 cursor-default items-center justify-center rounded text-[10px]",
+															allowed
+																? "bg-rls-grant-muted/30 text-rls-grant"
+																: "bg-rls-deny-muted/20 text-rls-deny-muted",
+														)}
+													>
+														{allowed ? (
+															<Check className="size-3" />
+														) : (
+															<X className="size-3" />
+														)}
+													</div>
+												</TooltipTrigger>
+												<TooltipContent side="top" className="text-[11px]">
+													<div className="flex flex-col gap-0.5">
+														<span className="font-medium">
+															{OP_LABELS[op]} on {tp.schema}.{tp.table}
+														</span>
+														<span className="text-foreground/60">
+															{allowed ? "Allowed" : "Denied"}
+														</span>
+														{allowed && tp.grantedBy.length > 0 && (
+															<span className="text-foreground/50">
+																via {tp.grantedBy.join(", ")}
 															</span>
-															<span className="text-foreground/60">
-																{allowed ? "Allowed" : "Denied"}
-															</span>
-															{allowed && tp.grantedBy.length > 0 && (
-																<span className="text-foreground/50">
-																	via {tp.grantedBy.join(", ")}
-																</span>
-															)}
-														</div>
-													</TooltipContent>
-												</Tooltip>
-											</td>
-										);
-									},
-								)}
+														)}
+													</div>
+												</TooltipContent>
+											</Tooltip>
+										</td>
+									);
+								})}
 							</tr>
 						))}
 					</tbody>

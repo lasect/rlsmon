@@ -69,6 +69,12 @@ export interface RoleInfo {
 	name: string;
 	isSuperuser: boolean;
 	canLogin: boolean;
+	canCreateRole: boolean;
+	canCreateDb: boolean;
+	canBypassRls: boolean;
+	canReplicate: boolean;
+	inheritPrivileges: boolean;
+	connectionLimit: number;
 	memberOf: string[];
 }
 
@@ -79,7 +85,13 @@ export async function getRoles(): Promise<RoleInfo[]> {
 		SELECT 
 			r.rolname as name,
 			r.rolsuper as is_superuser,
-			r.rolcanlogin as can_login
+			r.rolcanlogin as can_login,
+			r.rolcreaterole as can_create_role,
+			r.rolcreatedb as can_create_db,
+			r.rolbypassrls as bypass_rls,
+			r.rolreplication as can_replicate,
+			r.rolinherit as inherit_privileges,
+			r.rolconnlimit as connection_limit
 		FROM pg_roles r
 		WHERE r.rolname !~ '^pg_'
 		ORDER BY r.rolname
@@ -109,6 +121,12 @@ export async function getRoles(): Promise<RoleInfo[]> {
 		name: r.name,
 		isSuperuser: r.is_superuser,
 		canLogin: r.can_login,
+		canCreateRole: r.can_create_role,
+		canCreateDb: r.can_create_db,
+		canBypassRls: r.bypass_rls,
+		canReplicate: r.can_replicate,
+		inheritPrivileges: r.inherit_privileges,
+		connectionLimit: r.connection_limit,
 		memberOf: memberOfByRole.get(r.name) || [],
 	}));
 }

@@ -1,15 +1,9 @@
-import { cn } from "@/lib/utils";
-
-interface RoleNode {
-	name: string;
-	isSuperuser: boolean;
-	canLogin: boolean;
-	memberOf: string[];
-}
+import { RoleBadge } from "@/components/role/role-badge";
+import type { RoleInfo } from "@/types/roles";
 
 interface InheritanceTreeProps {
-	role: RoleNode;
-	allRoles: RoleNode[];
+	role: RoleInfo;
+	allRoles: RoleInfo[];
 	onSelect: (name: string) => void;
 }
 
@@ -98,16 +92,16 @@ export function InheritanceTree({
 
 function buildAncestorChain(
 	roleName: string,
-	allRoles: RoleNode[],
+	allRoles: RoleInfo[],
 	visited = new Set<string>(),
-): RoleNode[] {
+): RoleInfo[] {
 	if (visited.has(roleName)) return [];
 	visited.add(roleName);
 
 	const role = allRoles.find((r) => r.name === roleName);
 	if (!role || role.memberOf.length === 0) return [];
 
-	const results: RoleNode[] = [];
+	const results: RoleInfo[] = [];
 	for (const parent of role.memberOf) {
 		const parentRole = allRoles.find((r) => r.name === parent);
 		if (!parentRole) continue;
@@ -117,45 +111,6 @@ function buildAncestorChain(
 	return results;
 }
 
-function findDescendants(roleName: string, allRoles: RoleNode[]): RoleNode[] {
+function findDescendants(roleName: string, allRoles: RoleInfo[]): RoleInfo[] {
 	return allRoles.filter((r) => r.memberOf.includes(roleName));
-}
-
-function RoleBadge({
-	name,
-	isSuperuser,
-	canLogin,
-	active,
-	onClick,
-}: {
-	name: string;
-	isSuperuser: boolean;
-	canLogin: boolean;
-	active?: boolean;
-	onClick?: () => void;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			className={cn(
-				"flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors",
-				active
-					? "bg-primary/15 font-medium text-primary"
-					: "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-			)}
-		>
-			{name}
-			{isSuperuser && (
-				<span className="rounded bg-yellow-500/20 px-1 py-px font-medium text-[8px] text-yellow-500">
-					SU
-				</span>
-			)}
-			{canLogin && (
-				<span className="rounded bg-blue-500/20 px-1 py-px font-medium text-[8px] text-blue-400">
-					L
-				</span>
-			)}
-		</button>
-	);
 }

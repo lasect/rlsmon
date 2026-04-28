@@ -7,24 +7,24 @@ export function BottomStatusBar() {
 	const hasPersona = persona.role && persona.role.length > 0;
 
 	return (
-		<footer className="fixed bottom-0 left-0 right-0 z-50 flex h-8 w-full items-center justify-between border-t border-[#222222] bg-[#0d0d0d]">
+		<footer className="fixed right-0 bottom-0 left-0 z-50 flex h-8 w-full items-center justify-between border-[#222222] border-t bg-[#0d0d0d]">
 			<button
 				type="button"
 				onClick={() => navigate("/simulate")}
-				className="flex items-center px-3 cursor-pointer"
+				className="flex cursor-pointer items-center px-3"
 			>
 				{hasPersona ? (
 					<span className="font-mono text-[10px] text-accent">
 						● persona: {persona.role}
 					</span>
 				) : (
-					<span className="font-mono text-[10px] text-[#555555]">
+					<span className="font-mono text-[#555555] text-[10px]">
 						○ no persona
 					</span>
 				)}
 			</button>
 
-			<span className="px-3 font-mono text-[10px] text-[#444444]">pg</span>
+			<span className="px-3 font-mono text-[#444444] text-[10px]">pg</span>
 		</footer>
 	);
 }

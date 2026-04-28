@@ -127,14 +127,15 @@ function formatCellValue(value: unknown): string {
 	return String(value);
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isUuid(value: unknown): value is string {
 	return typeof value === "string" && UUID_RE.test(value);
 }
 
 function renderSnapshotValue(value: unknown): React.ReactNode {
-	if (value === null) return <span className="italic text-text-dim">null</span>;
+	if (value === null) return <span className="text-text-dim italic">null</span>;
 	if (value === undefined) return "";
 	if (typeof value === "boolean") {
 		return value ? (
@@ -145,17 +146,13 @@ function renderSnapshotValue(value: unknown): React.ReactNode {
 	}
 	const str = String(value);
 	if (isUuid(value)) {
-		return (
-			<span title={str}>
-				{str.slice(0, 20)}...
-			</span>
-		);
+		return <span title={str}>{str.slice(0, 20)}...</span>;
 	}
 	return str;
 }
 
 function renderBrowserCell(value: unknown): React.ReactNode {
-	if (value === null) return <span className="italic text-text-dim">null</span>;
+	if (value === null) return <span className="text-text-dim italic">null</span>;
 	if (value === undefined) return "";
 	if (typeof value === "boolean") {
 		return value ? (
@@ -166,11 +163,7 @@ function renderBrowserCell(value: unknown): React.ReactNode {
 	}
 	const str = String(value);
 	if (isUuid(value)) {
-		return (
-			<span title={str}>
-				{str.slice(0, 8)}...
-			</span>
-		);
+		return <span title={str}>{str.slice(0, 8)}...</span>;
 	}
 	return str;
 }
@@ -519,18 +512,20 @@ export function SimulatePage() {
 			</div>
 
 			<div className="flex flex-1 flex-col overflow-hidden bg-surface-raised">
-				{config.mode === "row-access" && config.table && (!hasRun || !results?.canAccess) && (
-					<RowSelector
-						tableName={config.table}
-						rows={tableRows}
-						columns={rowAccessQuery.data?.columns ?? []}
-						primaryKeys={primaryKeys}
-						selectedRowId={config.rowId}
-						onSelect={(rowId) => {
-							setConfig((prev) => ({ ...prev, rowId }));
-						}}
-					/>
-				)}
+				{config.mode === "row-access" &&
+					config.table &&
+					(!hasRun || !results?.canAccess) && (
+						<RowSelector
+							tableName={config.table}
+							rows={tableRows}
+							columns={rowAccessQuery.data?.columns ?? []}
+							primaryKeys={primaryKeys}
+							selectedRowId={config.rowId}
+							onSelect={(rowId) => {
+								setConfig((prev) => ({ ...prev, rowId }));
+							}}
+						/>
+					)}
 
 				{hasRun && error && (
 					<div className="flex flex-1 items-center justify-center">
@@ -676,44 +671,34 @@ export function SimulatePage() {
 										setHasRun(false);
 										setShowAllSnapshotFields(false);
 									}}
-									className="text-[10px] font-mono text-text-muted hover:text-text transition-colors mb-4 block"
+									className="mb-4 block font-mono text-[10px] text-text-muted transition-colors hover:text-text"
 								>
 									← Back to browse
 								</button>
 
-								<div className="rounded-sm border border-border bg-surface p-3 mb-4">
-									<p className="text-[10px] font-mono text-text-dim uppercase tracking-widest mb-2">
+								<div className="mb-4 rounded-sm border border-border bg-surface p-3">
+									<p className="mb-2 font-mono text-[10px] text-text-dim uppercase tracking-widest">
 										SELECTED ROW
 									</p>
 									<div className="grid grid-cols-2 gap-x-4 gap-y-2">
 										{Object.entries(results.rowSnapshot ?? {})
-											.slice(
-												0,
-												showAllSnapshotFields
-													? undefined
-													: 6,
-											)
+											.slice(0, showAllSnapshotFields ? undefined : 6)
 											.map(([k, v]) => (
 												<div key={k} className="contents">
-													<span className="text-[10px] font-mono text-text-dim">
+													<span className="font-mono text-[10px] text-text-dim">
 														{k}:
 													</span>
-													<span className="text-[11px] font-mono text-text">
+													<span className="font-mono text-[11px] text-text">
 														{renderSnapshotValue(v)}
 													</span>
 												</div>
 											))}
 									</div>
-									{Object.keys(results.rowSnapshot ?? {}).length >
-										6 && (
+									{Object.keys(results.rowSnapshot ?? {}).length > 6 && (
 										<button
 											type="button"
-											onClick={() =>
-												setShowAllSnapshotFields(
-													(prev) => !prev,
-												)
-											}
-											className="text-[10px] font-mono text-text-dim mt-1 hover:text-text transition-colors"
+											onClick={() => setShowAllSnapshotFields((prev) => !prev)}
+											className="mt-1 font-mono text-[10px] text-text-dim transition-colors hover:text-text"
 										>
 											{showAllSnapshotFields
 												? "− Show less"
@@ -721,7 +706,7 @@ export function SimulatePage() {
 										</button>
 									)}
 								</div>
-								<p className="text-[10px] font-mono text-text-dim">
+								<p className="font-mono text-[10px] text-text-dim">
 									Checked just now
 								</p>
 
@@ -729,7 +714,7 @@ export function SimulatePage() {
 									<div className="space-y-2">
 										<div className="flex items-center gap-2">
 											<span className="text-accent">✓</span>
-											<span className="text-sm font-medium text-text">
+											<span className="font-medium text-sm text-text">
 												Can access
 											</span>
 											<span className="rounded-sm border border-accent/20 bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">
@@ -745,21 +730,19 @@ export function SimulatePage() {
 												results.canAccess?.map((item) => (
 													<div
 														key={item.role}
-														className="flex items-center justify-between rounded-sm border-l-2 border-accent/30 bg-surface px-3 py-2 mb-1"
+														className="mb-1 flex items-center justify-between rounded-sm border-accent/30 border-l-2 bg-surface px-3 py-2"
 													>
-														<span className="font-mono text-xs text-text">
+														<span className="font-mono text-text text-xs">
 															{item.role}
 														</span>
 														<div className="flex items-center gap-1">
-															{item.attributes
-																?.superuser && (
-																<span className="rounded-sm border border-[#ffaa00]/20 bg-[#ffaa00]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#ffaa00]">
+															{item.attributes?.superuser && (
+																<span className="rounded-sm border border-[#ffaa00]/20 bg-[#ffaa00]/10 px-1.5 py-0.5 font-mono text-[#ffaa00] text-[10px]">
 																	SU
 																</span>
 															)}
-															{item.attributes
-																?.bypassRls && (
-																<span className="rounded-sm border border-[#ff4444]/20 bg-[#ff4444]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#ff4444]">
+															{item.attributes?.bypassRls && (
+																<span className="rounded-sm border border-[#ff4444]/20 bg-[#ff4444]/10 px-1.5 py-0.5 font-mono text-[#ff4444] text-[10px]">
 																	BYPASS
 																</span>
 															)}
@@ -772,77 +755,65 @@ export function SimulatePage() {
 
 									<div className="space-y-2">
 										<div className="flex items-center gap-2">
-											<span className="text-critical">
-												×
-											</span>
-											<span className="text-sm font-medium text-text">
+											<span className="text-critical">×</span>
+											<span className="font-medium text-sm text-text">
 												Cannot access
 											</span>
 											<span className="rounded-sm border border-critical/20 bg-critical/10 px-1.5 py-0.5 font-mono text-[10px] text-critical">
-												{results.cannotAccess?.length ??
-													0}
+												{results.cannotAccess?.length ?? 0}
 											</span>
 										</div>
 										<div className="space-y-1">
-											{results.cannotAccess?.length ===
-											0 ? (
+											{results.cannotAccess?.length === 0 ? (
 												<p className="font-mono text-[10px] text-text-dim italic">
-													All roles can access this
-													row
+													All roles can access this row
 												</p>
 											) : (
-												results.cannotAccess?.map(
-													(item) => (
-														<div
-															key={item.role}
-															className="flex items-center justify-between rounded-sm border-l-2 border-critical/20 bg-surface px-3 py-2 mb-1"
+												results.cannotAccess?.map((item) => (
+													<div
+														key={item.role}
+														className="mb-1 flex items-center justify-between rounded-sm border-critical/20 border-l-2 bg-surface px-3 py-2"
+													>
+														<span className="font-mono text-text text-xs">
+															{item.role}
+														</span>
+														<span
+															className={cn(
+																"rounded-sm border px-1.5 py-0.5 font-mono text-[10px]",
+																item.reason === "rls_filtered"
+																	? "border-[#ffaa00]/20 bg-[#ffaa00]/10 text-[#ffaa00]"
+																	: "border-[#ff4444]/20 bg-[#ff4444]/10 text-[#ff4444]",
+															)}
 														>
-															<span className="font-mono text-xs text-text">
-																{item.role}
-															</span>
-															<span
-																className={cn(
-																	"rounded-sm border px-1.5 py-0.5 font-mono text-[10px]",
-																	item.reason ===
-																		"rls_filtered"
-																		? "border-[#ffaa00]/20 bg-[#ffaa00]/10 text-[#ffaa00]"
-																		: "border-[#ff4444]/20 bg-[#ff4444]/10 text-[#ff4444]",
-																)}
-															>
-																{item.reason ===
-																"rls_filtered"
-																	? "rls filtered"
-																	: "no privilege"}
-															</span>
-														</div>
-													),
-												)
+															{item.reason === "rls_filtered"
+																? "rls filtered"
+																: "no privilege"}
+														</span>
+													</div>
+												))
 											)}
 										</div>
 									</div>
 								</div>
 
-								<div className="mt-4 pt-3 border-t border-border flex gap-4">
-									{results.canAccess &&
-										results.canAccess.length > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													updateConfig({
-														role: results.canAccess?.[0]
-															.role,
-														mode: "table",
-													})
-												}
-												className="text-[11px] text-text-muted hover:text-accent font-mono transition-colors"
-											>
-												Simulate as{" "}
-												{results.canAccess[0].role} →
-											</button>
-										)}
+								<div className="mt-4 flex gap-4 border-border border-t pt-3">
+									{results.canAccess && results.canAccess.length > 0 && (
+										<button
+											type="button"
+											onClick={() =>
+												updateConfig({
+													role: results.canAccess?.[0].role,
+													mode: "table",
+												})
+											}
+											className="font-mono text-[11px] text-text-muted transition-colors hover:text-accent"
+										>
+											Simulate as {results.canAccess[0].role} →
+										</button>
+									)}
 									<Link
 										to={`/explore/policies?table=${config.table}`}
-										className="text-[11px] text-text-muted hover:text-accent font-mono transition-colors"
+										className="font-mono text-[11px] text-text-muted transition-colors hover:text-accent"
 									>
 										View policies for this table →
 									</Link>
@@ -918,10 +889,12 @@ function RowSelector({
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			<div className="flex-shrink-0 border-border border-b bg-surface px-4 py-2 space-y-1">
+			<div className="flex-shrink-0 space-y-1 border-border border-b bg-surface px-4 py-2">
 				<div className="flex items-center gap-3">
-					<span className="font-mono text-sm text-accent">{tableName}</span>
-					<span className="font-mono text-[10px] text-text-muted">{rows.length} rows</span>
+					<span className="font-mono text-accent text-sm">{tableName}</span>
+					<span className="font-mono text-[10px] text-text-muted">
+						{rows.length} rows
+					</span>
 				</div>
 				<p className="font-mono text-[10px] text-text-dim">
 					Click a row to select it, then run the simulation
@@ -934,7 +907,7 @@ function RowSelector({
 							{columns.map((col) => (
 								<th
 									key={col}
-									className="text-[10px] font-mono text-text-dim uppercase tracking-wider border-b border-border py-1.5 px-3"
+									className="border-border border-b px-3 py-1.5 font-mono text-[10px] text-text-dim uppercase tracking-wider"
 								>
 									{col}
 								</th>
@@ -951,14 +924,14 @@ function RowSelector({
 									key={i}
 									className={cn(
 										"group cursor-pointer transition-colors hover:bg-surface-raised",
-										isSelected && "bg-accent/5 border-l-2 border-accent",
+										isSelected && "border-accent border-l-2 bg-accent/5",
 									)}
 									onClick={() => handleSelect(row)}
 								>
 									{columns.map((col) => (
 										<td
 											key={col}
-											className="max-w-[200px] truncate border-b border-border-subtle py-1.5 px-3 font-mono text-[11px] text-text"
+											className="max-w-[200px] truncate border-border-subtle border-b px-3 py-1.5 font-mono text-[11px] text-text"
 										>
 											{renderBrowserCell(row[col])}
 										</td>

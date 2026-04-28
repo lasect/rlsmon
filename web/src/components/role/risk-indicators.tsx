@@ -1,12 +1,6 @@
 import { Database, LogIn, ShieldOff, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface RoleData {
-	name: string;
-	isSuperuser: boolean;
-	canLogin: boolean;
-	memberOf: string[];
-}
+import type { RoleInfo } from "@/types/roles";
 
 interface RiskFinding {
 	severity: "critical" | "warning" | "info";
@@ -15,8 +9,8 @@ interface RiskFinding {
 }
 
 interface RiskIndicatorsProps {
-	role: RoleData;
-	allRoles: RoleData[];
+	role: RoleInfo;
+	allRoles: RoleInfo[];
 }
 
 export function RiskIndicators({ role, allRoles }: RiskIndicatorsProps) {

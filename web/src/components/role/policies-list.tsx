@@ -1,5 +1,6 @@
 import { CommandBadge } from "@/components/command-badge";
 import { cn } from "@/lib/utils";
+import type { RoleInfo } from "@/types/roles";
 
 interface Policy {
 	name: string;
@@ -11,23 +12,12 @@ interface Policy {
 	withCheck?: string | null;
 }
 
-interface RoleData {
-	name: string;
-	isSuperuser: boolean;
-	canLogin: boolean;
-	memberOf: string[];
-}
-
 interface RolePoliciesListProps {
-	role: RoleData;
-	allRoles: RoleData[];
+	role: RoleInfo;
 	policies: Policy[];
 }
 
-export function RolePoliciesList({
-	role,
-	policies,
-}: Omit<RolePoliciesListProps, "allRoles">) {
+export function RolePoliciesList({ role, policies }: RolePoliciesListProps) {
 	const effectiveRoles = new Set<string>([
 		role.name,
 		...role.memberOf,

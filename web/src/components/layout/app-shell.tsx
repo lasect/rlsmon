@@ -5,7 +5,7 @@ export function AppShell() {
 	return (
 		<div className="h-screen overflow-hidden bg-background">
 			<TopBar />
-			<main className="mt-10 h-[calc(100vh-40px)] flex flex-col overflow-hidden bg-background">
+			<main className="mt-10 flex h-[calc(100vh-40px)] flex-col overflow-hidden bg-background">
 				<Outlet />
 			</main>
 		</div>
