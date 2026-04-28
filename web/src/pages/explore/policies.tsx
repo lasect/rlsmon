@@ -9,7 +9,6 @@ import { FilterBar } from "@/components/filter-bar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-type PolicyGroupBy = "table" | "command" | "none";
 type AnnotationStatusFilter =
 	| "all"
 	| "reviewed"
@@ -64,17 +63,20 @@ function AnnotationEditForm({
 	table,
 	policy,
 	onCancel,
+	onSaved,
 }: {
 	annotation: { note: string; owner: string; status: string } | null;
 	schema: string;
 	table: string;
 	policy: string;
 	onCancel: () => void;
+	onSaved: () => void;
 }) {
 	const utils = trpc.useUtils();
 	const setMutation = trpc.annotations.set.useMutation({
 		onSuccess: () => {
 			utils.annotations.list.invalidate();
+			onSaved();
 		},
 	});
 
@@ -258,7 +260,6 @@ export function PoliciesPage() {
 
 	const [search, setSearch] = useState("");
 	const [selectedName, setSelectedName] = useState<string | null>(null);
-	const [groupBy, setGroupBy] = useState<PolicyGroupBy>("table");
 	const [annotationFilter, setAnnotationFilter] =
 		useState<AnnotationStatusFilter>("all");
 	const [isEditingAnnotation, setIsEditingAnnotation] = useState(false);
@@ -358,29 +359,14 @@ export function PoliciesPage() {
 
 	const groups: { key: string; label: string; items: typeof policiesData }[] =
 		[];
-
-	if (groupBy === "table") {
-		const tableMap = new Map<string, typeof policiesData>();
-		for (const p of filtered) {
-			const key = `${p.schema}.${p.table}`;
-			if (!tableMap.has(key)) tableMap.set(key, []);
-			tableMap.get(key)?.push(p);
-		}
-		for (const [key, items] of tableMap) {
-			groups.push({ key, label: key, items });
-		}
-	} else if (groupBy === "command") {
-		const cmdMap = new Map<string, typeof policiesData>();
-		for (const p of filtered) {
-			const key = p.command;
-			if (!cmdMap.has(key)) cmdMap.set(key, []);
-			cmdMap.get(key)?.push(p);
-		}
-		for (const [key, items] of cmdMap) {
-			groups.push({ key, label: key, items });
-		}
-	} else {
-		groups.push({ key: "all", label: "All Policies", items: filtered });
+	const tableMap = new Map<string, typeof policiesData>();
+	for (const p of filtered) {
+		const key = `${p.schema}.${p.table}`;
+		if (!tableMap.has(key)) tableMap.set(key, []);
+		tableMap.get(key)?.push(p);
+	}
+	for (const [key, items] of tableMap) {
+		groups.push({ key, label: key, items });
 	}
 
 	const selected = policiesData.find((p) => p.name === selectedName) ?? null;
@@ -430,29 +416,6 @@ export function PoliciesPage() {
 						onSearchChange={setSearch}
 						placeholder="Search policies..."
 					/>
-					<div className="mt-2 flex gap-1">
-						{(
-							[
-								{ key: "table", label: "By Table" },
-								{ key: "command", label: "By Command" },
-								{ key: "none", label: "Flat" },
-							] as const
-						).map((opt) => (
-							<button
-								key={opt.key}
-								type="button"
-								onClick={() => setGroupBy(opt.key)}
-								className={cn(
-									"flex-1 rounded px-2 py-1 font-medium text-[10px] uppercase tracking-wider transition-colors",
-									groupBy === opt.key
-										? "bg-primary/10 text-primary"
-										: "text-muted-foreground hover:bg-muted",
-								)}
-							>
-								{opt.label}
-							</button>
-						))}
-					</div>
 					<div className="mt-2 flex flex-wrap gap-1">
 						{(
 							[
@@ -482,11 +445,9 @@ export function PoliciesPage() {
 				<div className="flex-1 overflow-y-auto px-2 pb-2">
 					{groups.map((group) => (
 						<div key={group.key} className="mb-2">
-							{groupBy !== "none" && (
-								<div className="px-2 py-1 font-medium text-[10px] text-muted-foreground/60 uppercase tracking-wider">
-									{group.label}
-								</div>
-							)}
+							<div className="px-2 py-1 font-medium text-[10px] text-muted-foreground/60 uppercase tracking-wider">
+								{group.label}
+							</div>
 							{group.items.map((policy) => {
 								const key = `${policy.schema}.${policy.table}.${policy.name}`;
 								const annotation = annotationMap.get(key);
@@ -650,6 +611,7 @@ export function PoliciesPage() {
 										table={selected.table}
 										policy={selected.name}
 										onCancel={() => setIsEditingAnnotation(false)}
+										onSaved={() => setIsEditingAnnotation(false)}
 									/>
 								)}
 
