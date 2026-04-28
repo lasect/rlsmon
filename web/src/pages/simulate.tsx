@@ -7,10 +7,9 @@ import {
 	Shield,
 	Table2,
 	Trash2,
-	User,
-	X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { trpc } from "@/api/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -128,11 +127,60 @@ function formatCellValue(value: unknown): string {
 	return String(value);
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+	return typeof value === "string" && UUID_RE.test(value);
+}
+
+function renderSnapshotValue(value: unknown): React.ReactNode {
+	if (value === null) return <span className="italic text-text-dim">null</span>;
+	if (value === undefined) return "";
+	if (typeof value === "boolean") {
+		return value ? (
+			<span className="text-accent">true</span>
+		) : (
+			<span className="text-critical">false</span>
+		);
+	}
+	const str = String(value);
+	if (isUuid(value)) {
+		return (
+			<span title={str}>
+				{str.slice(0, 20)}...
+			</span>
+		);
+	}
+	return str;
+}
+
+function renderBrowserCell(value: unknown): React.ReactNode {
+	if (value === null) return <span className="italic text-text-dim">null</span>;
+	if (value === undefined) return "";
+	if (typeof value === "boolean") {
+		return value ? (
+			<span className="text-accent">true</span>
+		) : (
+			<span className="text-critical">false</span>
+		);
+	}
+	const str = String(value);
+	if (isUuid(value)) {
+		return (
+			<span title={str}>
+				{str.slice(0, 8)}...
+			</span>
+		);
+	}
+	return str;
+}
+
 export function SimulatePage() {
 	const [config, setConfig] = useState<SimulateConfig>(loadConfig);
 	const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set([0]));
 	const [isRunning, setIsRunning] = useState(false);
 	const [hasRun, setHasRun] = useState(false);
+	const [showAllSnapshotFields, setShowAllSnapshotFields] = useState(false);
 
 	const [schema, tableName] = config.table ? config.table.split(".") : ["", ""];
 
@@ -471,8 +519,9 @@ export function SimulatePage() {
 			</div>
 
 			<div className="flex flex-1 flex-col overflow-hidden bg-surface-raised">
-				{config.mode === "row-access" && config.table && (
+				{config.mode === "row-access" && config.table && (!hasRun || !results?.canAccess) && (
 					<RowSelector
+						tableName={config.table}
 						rows={tableRows}
 						columns={rowAccessQuery.data?.columns ?? []}
 						primaryKeys={primaryKeys}
@@ -619,66 +668,102 @@ export function SimulatePage() {
 					results &&
 					results.canAccess && (
 						<div className="flex flex-1 flex-col overflow-hidden">
-							<div className="flex-shrink-0 border-border border-b bg-surface-raised px-4 py-3">
-								<h2 className="font-medium text-sm text-text">
-									Row Access Check
-								</h2>
-								<p className="mt-0.5 text-[13px] text-text-muted">
-									Row: {config.rowId}
-								</p>
-							</div>
 							<div className="flex-1 overflow-auto p-4">
-								<div className="mb-4 space-y-2">
-									<div className="rounded border border-border bg-surface p-3">
-										<div className="mb-1 font-medium text-[10px] text-text-muted uppercase tracking-wider">
-											Selected Row
-										</div>
-										<code className="font-mono text-xs">
-											{results.rowSnapshot
-												? Object.entries(results.rowSnapshot)
-														.slice(0, 4)
-														.map(([k, v]) => `${k}=${formatCellValue(v)}`)
-														.join(", ")
-												: config.rowId}
-										</code>
-									</div>
-								</div>
+								<button
+									type="button"
+									onClick={() => {
+										setResults(null);
+										setHasRun(false);
+										setShowAllSnapshotFields(false);
+									}}
+									className="text-[10px] font-mono text-text-muted hover:text-text transition-colors mb-4 block"
+								>
+									← Back to browse
+								</button>
 
-								<div className="space-y-4">
+								<div className="rounded-sm border border-border bg-surface p-3 mb-4">
+									<p className="text-[10px] font-mono text-text-dim uppercase tracking-widest mb-2">
+										SELECTED ROW
+									</p>
+									<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+										{Object.entries(results.rowSnapshot ?? {})
+											.slice(
+												0,
+												showAllSnapshotFields
+													? undefined
+													: 6,
+											)
+											.map(([k, v]) => (
+												<div key={k} className="contents">
+													<span className="text-[10px] font-mono text-text-dim">
+														{k}:
+													</span>
+													<span className="text-[11px] font-mono text-text">
+														{renderSnapshotValue(v)}
+													</span>
+												</div>
+											))}
+									</div>
+									{Object.keys(results.rowSnapshot ?? {}).length >
+										6 && (
+										<button
+											type="button"
+											onClick={() =>
+												setShowAllSnapshotFields(
+													(prev) => !prev,
+												)
+											}
+											className="text-[10px] font-mono text-text-dim mt-1 hover:text-text transition-colors"
+										>
+											{showAllSnapshotFields
+												? "− Show less"
+												: `+ ${Object.keys(results.rowSnapshot ?? {}).length - 6} more fields`}
+										</button>
+									)}
+								</div>
+								<p className="text-[10px] font-mono text-text-dim">
+									Checked just now
+								</p>
+
+								<div className="mt-4 space-y-4">
 									<div className="space-y-2">
 										<div className="flex items-center gap-2">
-											<User className="size-4 text-emerald-400" />
-											<span className="font-medium text-sm text-text">
+											<span className="text-accent">✓</span>
+											<span className="text-sm font-medium text-text">
 												Can access
 											</span>
-											<span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-400">
+											<span className="rounded-sm border border-accent/20 bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">
 												{results.canAccess?.length ?? 0}
 											</span>
 										</div>
-										<div className="space-y-1 border-l-2 border-l-emerald-500/30 pl-3">
+										<div className="space-y-1">
 											{results.canAccess?.length === 0 ? (
-												<div className="py-2 text-[11px] text-text-muted">
+												<p className="font-mono text-[10px] text-text-dim italic">
 													No roles can access this row
-												</div>
+												</p>
 											) : (
 												results.canAccess?.map((item) => (
 													<div
 														key={item.role}
-														className="flex items-center gap-2 py-1"
+														className="flex items-center justify-between rounded-sm border-l-2 border-accent/30 bg-surface px-3 py-2 mb-1"
 													>
-														<span className="font-mono text-text text-xs">
+														<span className="font-mono text-xs text-text">
 															{item.role}
 														</span>
-														{item.attributes?.superuser && (
-															<span className="rounded bg-purple-500/20 px-1 py-0.5 text-[9px] text-purple-400">
-																SU
-															</span>
-														)}
-														{item.attributes?.bypassRls && (
-															<span className="rounded bg-blue-500/20 px-1 py-0.5 text-[9px] text-blue-400">
-																BYPASS
-															</span>
-														)}
+														<div className="flex items-center gap-1">
+															{item.attributes
+																?.superuser && (
+																<span className="rounded-sm border border-[#ffaa00]/20 bg-[#ffaa00]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#ffaa00]">
+																	SU
+																</span>
+															)}
+															{item.attributes
+																?.bypassRls && (
+																<span className="rounded-sm border border-[#ff4444]/20 bg-[#ff4444]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#ff4444]">
+																	BYPASS
+																</span>
+															)}
+														</div>
 													</div>
 												))
 											)}
@@ -687,45 +772,80 @@ export function SimulatePage() {
 
 									<div className="space-y-2">
 										<div className="flex items-center gap-2">
-											<X className="size-4 text-red-400" />
-											<span className="font-medium text-sm text-text">
+											<span className="text-critical">
+												×
+											</span>
+											<span className="text-sm font-medium text-text">
 												Cannot access
 											</span>
-											<span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-400">
-												{results.cannotAccess?.length ?? 0}
+											<span className="rounded-sm border border-critical/20 bg-critical/10 px-1.5 py-0.5 font-mono text-[10px] text-critical">
+												{results.cannotAccess?.length ??
+													0}
 											</span>
 										</div>
-										<div className="space-y-1 border-l-2 border-l-red-500/30 pl-3">
-											{results.cannotAccess?.length === 0 ? (
-												<div className="py-2 text-[11px] text-text-muted">
-													All roles can access this row
-												</div>
+										<div className="space-y-1">
+											{results.cannotAccess?.length ===
+											0 ? (
+												<p className="font-mono text-[10px] text-text-dim italic">
+													All roles can access this
+													row
+												</p>
 											) : (
-												results.cannotAccess?.map((item) => (
-													<div
-														key={item.role}
-														className="flex items-center gap-2 py-1"
-													>
-														<span className="font-mono text-text text-xs">
-															{item.role}
-														</span>
-														<span
-															className={cn(
-																"rounded px-1 py-0.5 text-[9px]",
-																item.reason === "rls_filtered"
-																	? "bg-amber-500/20 text-amber-400"
-																	: "bg-red-500/20 text-red-400",
-															)}
+												results.cannotAccess?.map(
+													(item) => (
+														<div
+															key={item.role}
+															className="flex items-center justify-between rounded-sm border-l-2 border-critical/20 bg-surface px-3 py-2 mb-1"
 														>
-															{item.reason === "rls_filtered"
-																? "rls filtered"
-																: "no privilege"}
-														</span>
-													</div>
-												))
+															<span className="font-mono text-xs text-text">
+																{item.role}
+															</span>
+															<span
+																className={cn(
+																	"rounded-sm border px-1.5 py-0.5 font-mono text-[10px]",
+																	item.reason ===
+																		"rls_filtered"
+																		? "border-[#ffaa00]/20 bg-[#ffaa00]/10 text-[#ffaa00]"
+																		: "border-[#ff4444]/20 bg-[#ff4444]/10 text-[#ff4444]",
+																)}
+															>
+																{item.reason ===
+																"rls_filtered"
+																	? "rls filtered"
+																	: "no privilege"}
+															</span>
+														</div>
+													),
+												)
 											)}
 										</div>
 									</div>
+								</div>
+
+								<div className="mt-4 pt-3 border-t border-border flex gap-4">
+									{results.canAccess &&
+										results.canAccess.length > 0 && (
+											<button
+												type="button"
+												onClick={() =>
+													updateConfig({
+														role: results.canAccess?.[0]
+															.role,
+														mode: "table",
+													})
+												}
+												className="text-[11px] text-text-muted hover:text-accent font-mono transition-colors"
+											>
+												Simulate as{" "}
+												{results.canAccess[0].role} →
+											</button>
+										)}
+									<Link
+										to={`/explore/policies?table=${config.table}`}
+										className="text-[11px] text-text-muted hover:text-accent font-mono transition-colors"
+									>
+										View policies for this table →
+									</Link>
 								</div>
 							</div>
 						</div>
@@ -745,7 +865,7 @@ export function SimulatePage() {
 					</div>
 				)}
 
-				{!hasRun && (
+				{!hasRun && !(config.mode === "row-access" && config.table) && (
 					<div className="flex flex-1 items-center justify-center">
 						<div className="text-center">
 							<Play className="mx-auto h-8 w-8 text-text-muted opacity-50" />
@@ -764,12 +884,14 @@ export function SimulatePage() {
 }
 
 function RowSelector({
+	tableName,
 	rows,
 	columns,
 	primaryKeys,
 	selectedRowId,
 	onSelect,
 }: {
+	tableName: string;
 	rows: TableRow[];
 	columns: string[];
 	primaryKeys: string[];
@@ -796,11 +918,14 @@ function RowSelector({
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			<div className="flex-shrink-0 items-center justify-between border-border border-b bg-surface px-4 py-2">
-				<span className="font-mono text-text text-xs">{columns.join(".")}</span>
-				<span className="rounded bg-surface-raised px-2 py-0.5 text-[10px] text-text-muted">
-					{rows.length} rows (browsing)
-				</span>
+			<div className="flex-shrink-0 border-border border-b bg-surface px-4 py-2 space-y-1">
+				<div className="flex items-center gap-3">
+					<span className="font-mono text-sm text-accent">{tableName}</span>
+					<span className="font-mono text-[10px] text-text-muted">{rows.length} rows</span>
+				</div>
+				<p className="font-mono text-[10px] text-text-dim">
+					Click a row to select it, then run the simulation
+				</p>
 			</div>
 			<div className="flex-1 overflow-auto">
 				<table className="w-full text-left text-xs">
@@ -809,7 +934,7 @@ function RowSelector({
 							{columns.map((col) => (
 								<th
 									key={col}
-									className="border-border border-b bg-surface px-3 py-2 font-medium text-text-muted uppercase tracking-wider"
+									className="text-[10px] font-mono text-text-dim uppercase tracking-wider border-b border-border py-1.5 px-3"
 								>
 									{col}
 								</th>
@@ -825,18 +950,17 @@ function RowSelector({
 								<tr
 									key={i}
 									className={cn(
-										"group cursor-pointer transition-colors hover:bg-surface",
-										isSelected &&
-											"border-l-2 border-l-emerald-500 bg-emerald-500/5",
+										"group cursor-pointer transition-colors hover:bg-surface-raised",
+										isSelected && "bg-accent/5 border-l-2 border-accent",
 									)}
 									onClick={() => handleSelect(row)}
 								>
 									{columns.map((col) => (
 										<td
 											key={col}
-											className="max-w-[200px] truncate border-border border-b px-3 py-2 font-mono text-text"
+											className="max-w-[200px] truncate border-b border-border-subtle py-1.5 px-3 font-mono text-[11px] text-text"
 										>
-											{formatCellValue(row[col])}
+											{renderBrowserCell(row[col])}
 										</td>
 									))}
 								</tr>
@@ -845,13 +969,6 @@ function RowSelector({
 					</tbody>
 				</table>
 			</div>
-			{rows.length > 0 && (
-				<div className="flex h-7 flex-shrink-0 items-center border-border border-t bg-surface px-3">
-					<div className="text-[11px] text-text-muted">
-						Click a row to select it, then run the simulation
-					</div>
-				</div>
-			)}
 		</div>
 	);
 }

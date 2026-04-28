@@ -1,17 +1,15 @@
 import { Outlet } from "react-router-dom";
 import { TopBar } from "@/components/layout/top-bar";
-import { Sidebar } from "@/components/sidebar/sidebar";
+import { BottomStatusBar } from "@/components/layout/bottom-status-bar";
 
 export function AppShell() {
 	return (
-		<div className="flex h-screen flex-col overflow-hidden">
+		<div className="h-screen overflow-hidden bg-background">
 			<TopBar />
-			<div className="flex flex-1 overflow-hidden">
-				<Sidebar />
-				<main className="flex flex-1 flex-col overflow-hidden bg-background">
-					<Outlet />
-				</main>
-			</div>
+			<main className="mt-10 h-[calc(100vh-40px-32px)] flex flex-col overflow-hidden bg-background">
+				<Outlet />
+			</main>
+			<BottomStatusBar />
 		</div>
 	);
 }

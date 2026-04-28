@@ -1,66 +1,88 @@
-import { Circle } from "lucide-react";
-import { useLocation } from "react-router-dom";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useLocation, useNavigate } from "react-router-dom";
 
-const routeLabels: Record<string, string> = {
-	"/explore/matrix": "Explore / Matrix",
-	"/explore/policies": "Explore / Policies",
-	"/explore/roles": "Explore / Roles",
-	"/simulate": "Simulate / Persona",
-	"/audit": "Audit / Overview",
-	"/audit/ci": "Audit / CI Mode",
-	"/ai": "AI / Tools",
-	"/history": "History / Snapshots",
-	"/history/migration": "History / Migration",
-	"/settings": "Settings",
-};
+const navItems = [
+	{ label: "Matrix", href: "/explore/matrix", activeFor: ["/explore/matrix"] },
+	{
+		label: "Policies",
+		href: "/explore/policies",
+		activeFor: ["/explore/policies"],
+	},
+	{ label: "Roles", href: "/explore/roles", activeFor: ["/explore/roles"] },
+	{ label: "Simulate", href: "/simulate", activeFor: ["/simulate"] },
+	{ label: "Audit", href: "/audit", activeFor: ["/audit", "/audit/ci"] },
+	{ label: "History", href: "/history", activeFor: ["/history", "/history/"] },
+];
 
 export function TopBar() {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const isConnected = true;
-	const currentPage = routeLabels[location.pathname] || location.pathname;
+
+	const isNavActive = (activeFor: string[]) => {
+		return activeFor.some((path) => {
+			if (path.endsWith("/")) {
+				return location.pathname.startsWith(path);
+			}
+			return location.pathname === path;
+		});
+	};
 
 	return (
-		<header className="flex h-8 w-full items-center justify-between border-border border-b bg-surface px-3">
-			<div className="flex items-center gap-3">
-				<span className="font-bold font-mono text-accent text-sm">RLSMon</span>
-				<span className="font-mono text-text-dim text-xs">/</span>
-				<span className="font-mono text-text-muted text-xs">{currentPage}</span>
+		<header className="fixed top-0 right-0 left-0 z-50 flex h-10 w-full items-center justify-between border-[#222222] border-b bg-[#0d0d0d] px-3">
+			{/* Left: Wordmark + host:port */}
+			<div className="flex items-center">
+				<button
+					type="button"
+					onClick={() => navigate("/explore/matrix")}
+					className="cursor-pointer font-bold font-mono text-accent text-sm"
+				>
+					RLSMon
+				</button>
+				<span className="ml-2 text-[#555555] text-[10px]">|</span>
+				<span className="ml-2 font-mono text-[#555555] text-[10px]">
+					localhost:5432
+				</span>
 			</div>
-			<div className="flex items-center gap-3">
-				<span className="font-mono text-text-dim text-xs">localhost:5432</span>
-				<div className="h-3 w-px bg-border" />
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<div className="flex items-center gap-1.5">
-							<Circle
-								className="size-2 shrink-0 fill-current"
-								style={{
-									color: isConnected
-										? "var(--color-accent)"
-										: "var(--color-critical)",
-								}}
-							/>
-							<span
-								className="font-mono text-[10px]"
-								style={{
-									color: isConnected
-										? "var(--color-accent)"
-										: "var(--color-critical)",
-								}}
-							>
-								{isConnected ? "connected" : "disconnected"}
-							</span>
-						</div>
-					</TooltipTrigger>
-					<TooltipContent side="bottom">
-						{isConnected ? "Connected to database" : "Not connected"}
-					</TooltipContent>
-				</Tooltip>
+
+			{/* Center: Navigation */}
+			<nav className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1">
+				{navItems.map((item) => {
+					const active = isNavActive(item.activeFor);
+					return (
+						<button
+							type="button"
+							key={item.href}
+							onClick={() => navigate(item.href)}
+							className={
+								active
+									? "rounded-sm border-accent border-b-2 bg-accent/5 px-3 py-1 font-mono text-accent text-xs transition-colors"
+									: "rounded-sm px-3 py-1 font-mono text-[#666666] text-xs transition-colors hover:bg-[#1a1a1a] hover:text-[#cccccc]"
+							}
+						>
+							{item.label}
+						</button>
+					);
+				})}
+			</nav>
+
+			{/* Right: connection status */}
+			<div className="flex items-center gap-1.5">
+				<span
+					className="text-[10px]"
+					style={{
+						color: isConnected ? "var(--color-accent)" : "#ff4444",
+					}}
+				>
+					●
+				</span>
+				<span
+					className="font-mono text-[10px]"
+					style={{
+						color: isConnected ? "var(--color-accent)" : "#ff4444",
+					}}
+				>
+					{isConnected ? "connected" : "disconnected"}
+				</span>
 			</div>
 		</header>
 	);

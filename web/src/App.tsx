@@ -11,7 +11,6 @@ import { MatrixPage } from "@/pages/explore/matrix";
 import { PoliciesPage } from "@/pages/explore/policies";
 import { RolesPage } from "@/pages/explore/roles";
 import { HistoryPage } from "@/pages/history";
-import { MigrationCheckPage } from "@/pages/history/migration";
 import { SnapshotDetailPage } from "@/pages/history/snapshot-detail";
 import { SettingsPage } from "@/pages/settings";
 import { SimulatePage } from "@/pages/simulate";
@@ -31,7 +30,6 @@ const router = createBrowserRouter([
 			{ path: "ai", element: <AiPage /> },
 			{ path: "history", element: <HistoryPage /> },
 			{ path: "history/:snapshotId", element: <SnapshotDetailPage /> },
-			{ path: "history/migration", element: <MigrationCheckPage /> },
 			{ path: "settings", element: <SettingsPage /> },
 		],
 	},
