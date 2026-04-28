@@ -95,10 +95,10 @@ export function RoleSidebar({
 							type="button"
 							onClick={() => onSelect(role.name)}
 							className={cn(
-								"flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
+								"flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-left transition-all border border-white/5 bg-muted/20 shadow-sm",
 								selectedName === role.name
-									? "border-l-2 border-l-primary bg-primary/5 pl-1.5"
-									: "border-l-2 border-l-transparent pl-1.5 hover:border-l-white/10 hover:bg-muted/50",
+									? "border-l-primary border-l-2 bg-primary/5 pl-1.5 shadow-none"
+									: "hover:border-white/10 hover:bg-muted/40",
 							)}
 						>
 							<div className="flex min-w-0 flex-1 flex-col">
