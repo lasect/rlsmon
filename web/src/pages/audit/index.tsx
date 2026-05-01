@@ -546,7 +546,7 @@ export function AuditPage() {
 						</div>
 					) : summaryLoading ? (
 						<div className="flex animate-pulse items-center gap-2 font-mono text-[11px] text-accent opacity-50">
-							✦ Generating summary...
+							Generating summary...
 						</div>
 					) : summaryError ? (
 						<div className="space-y-1">
@@ -858,7 +858,7 @@ function CheckFindingsRow({
 						<div className="mt-3 space-y-2">
 							{explainLoading ? (
 								<div className="flex animate-pulse items-center gap-2 font-mono text-[11px] text-accent opacity-50">
-									✦ Explaining...
+									Explaining...
 								</div>
 							) : explainError && !cachedExplanation ? (
 								<div className="space-y-1">
@@ -901,9 +901,11 @@ function CheckFindingsRow({
 								<button
 									type="button"
 									onClick={handleExplain}
-									className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+									className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
 								>
-									✦ Explain with AI
+									<span className="font-mono font-semibold text-[11px] text-emerald-50">
+										Explain with AI
+									</span>
 								</button>
 							)}
 						</div>
@@ -914,15 +916,17 @@ function CheckFindingsRow({
 									<button
 										type="button"
 										onClick={() => setSuggestExpanded(true)}
-										className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+										className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
 									>
-										✦ Suggest policy →
+										<span className="font-mono font-semibold text-[11px] text-emerald-50">
+											Suggest policy →
+										</span>
 									</button>
 								) : (
 									<div className="space-y-2 rounded border border-border/70 bg-card p-3">
 										{suggestLoading ? (
 											<div className="animate-pulse font-mono text-[11px] text-accent opacity-50">
-												✦ Generating...
+												Generating...
 											</div>
 										) : suggestError && !suggestResult ? (
 											<div className="space-y-1">
@@ -978,14 +982,16 @@ function CheckFindingsRow({
 													className="w-full rounded border border-input bg-background px-2 py-1 text-xs"
 												/>
 												<div className="flex gap-2">
-													<button
-														type="button"
-														onClick={handleSuggest}
-														disabled={!suggestInput.trim()}
-														className="rounded bg-primary px-3 py-1 font-medium text-primary-foreground text-xs hover:bg-primary/90 disabled:opacity-50"
-													>
-														Generate →
-													</button>
+											<button
+												type="button"
+												onClick={handleSuggest}
+												disabled={!suggestInput.trim()}
+												className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
+											>
+												<span className="font-mono font-semibold text-[11px] text-emerald-50">
+													Generate →
+												</span>
+											</button>
 													<button
 														type="button"
 														onClick={() => setSuggestExpanded(false)}

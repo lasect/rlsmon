@@ -612,7 +612,7 @@ export function PoliciesPage() {
 								</div>
 								{explainLoading ? (
 									<div className="animate-pulse font-mono text-[11px] text-accent opacity-50">
-										✦ Explaining...
+										Explaining...
 									</div>
 								) : explainError &&
 									!explainCache[
@@ -666,9 +666,11 @@ export function PoliciesPage() {
 									<button
 										type="button"
 										onClick={handleExplain}
-										className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+										className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
 									>
-										✦ Explain this policy
+										<span className="font-mono font-semibold text-[11px] text-emerald-50">
+											Explain this policy
+										</span>
 									</button>
 								)}
 							</div>
