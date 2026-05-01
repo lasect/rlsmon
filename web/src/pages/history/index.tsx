@@ -328,15 +328,15 @@ export function HistoryPage() {
 	if (activeTab === "migration") {
 		return (
 			<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
-				<div className="mb-3 flex gap-1">
+				<div className="mb-6 flex gap-0 border-b border-[#222222]">
 					<button
 						type="button"
 						onClick={() => setActiveTab("snapshots")}
 						className={cn(
-							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 							activeTab === "snapshots"
-								? "bg-primary/10 text-primary"
-								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+								? "text-accent border-accent"
+								: "text-[#666666] border-transparent hover:text-[#999999]",
 						)}
 					>
 						Snapshots
@@ -345,10 +345,10 @@ export function HistoryPage() {
 						type="button"
 						onClick={() => setActiveTab("migration")}
 						className={cn(
-							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 							activeTab === "migration"
-								? "bg-primary/10 text-primary"
-								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+								? "text-accent border-accent"
+								: "text-[#666666] border-transparent hover:text-[#999999]",
 						)}
 					>
 						Migration Check
@@ -367,15 +367,15 @@ export function HistoryPage() {
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
-			<div className="mb-3 flex gap-1">
+			<div className="mb-6 flex gap-0 border-b border-[#222222]">
 				<button
 					type="button"
 					onClick={() => setActiveTab("snapshots")}
 					className={cn(
-						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 						activeTab === "snapshots"
-							? "bg-primary/10 text-primary"
-							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+							? "text-accent border-accent"
+							: "text-[#666666] border-transparent hover:text-[#999999]",
 					)}
 				>
 					Snapshots
@@ -384,10 +384,10 @@ export function HistoryPage() {
 					type="button"
 					onClick={() => setActiveTab("migration")}
 					className={cn(
-						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 						activeTab === "migration"
-							? "bg-primary/10 text-primary"
-							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+							? "text-accent border-accent"
+							: "text-[#666666] border-transparent hover:text-[#999999]",
 					)}
 				>
 					Migration Check

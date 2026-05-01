@@ -10,7 +10,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "@/api/trpc";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { SnapshotMeta } from "@/lib/snapshots";
 import { cn } from "@/lib/utils";
 
@@ -304,23 +303,25 @@ export function MigrationCheckPanel({
 						</p>
 
 						<div className="space-y-1.5">
-							<Button
+							<button
+								type="button"
 								onClick={handleCheck}
 								disabled={!sql.trim() || isLoading}
-								className="h-8 w-full"
+								className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
 							>
 								{isLoading ? (
 									<>
-										<Loader2 className="mr-1.5 size-3.5 animate-spin" />
-										Checking...
+										<Loader2 className="size-3 animate-spin text-emerald-100" />
+										<span className="font-mono font-semibold text-emerald-50 text-[11px]">
+											Checking...
+										</span>
 									</>
 								) : (
-									<>
-										<ShieldCheck className="mr-1.5 size-3.5" />
+									<span className="font-mono font-semibold text-emerald-50 text-[11px]">
 										Check Migration
-									</>
+									</span>
 								)}
-							</Button>
+							</button>
 							<p className="text-center text-muted-foreground/50 text-xs">
 								⌘+Enter to run
 							</p>
