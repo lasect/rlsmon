@@ -1,4 +1,3 @@
-import { Settings } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSettings } from "@/context/settings-context";
 
@@ -72,10 +71,9 @@ export function TopBar() {
 				<button
 					type="button"
 					onClick={openSettings}
-					className="cursor-pointer rounded p-0.5 text-[#666666] hover:bg-[#1a1a1a] hover:text-[#cccccc]"
-					aria-label="Settings"
+					className="cursor-pointer rounded-sm px-3 py-1 font-mono text-[#666666] text-xs transition-colors hover:bg-[#1a1a1a] hover:text-[#cccccc]"
 				>
-					<Settings className="size-3.5" />
+					Settings
 				</button>
 				<div className="flex items-center gap-1.5">
 					<span

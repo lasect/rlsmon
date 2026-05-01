@@ -38,6 +38,15 @@ const PROVIDER_NAMES: Record<Provider, string> = {
 	"openai-compatible": "OPENAI-COMPATIBLE",
 };
 
+const DEFAULT_MODELS: Partial<Record<Provider, string>> = {
+	anthropic: "claude-sonnet-4-20250514",
+	openai: "gpt-4o-mini",
+	gemini: "gemini-2.0-flash",
+	mistral: "mistral-small-latest",
+	ollama: "llama3.2",
+	"openai-compatible": "gpt-4o-mini",
+};
+
 export function SettingsModal() {
 	const { isOpen, close } = useSettings();
 	const { data, refetch } = trpc.settings.get.useQuery();
@@ -48,6 +57,7 @@ export function SettingsModal() {
 		useState<Provider>("anthropic");
 	const [apiKey, setApiKey] = useState("");
 	const [baseUrl, setBaseUrl] = useState("");
+	const [model, setModel] = useState("");
 	const [isEditing, setIsEditing] = useState(false);
 	const [saveStatus, setSaveStatus] = useState<
 		"idle" | "saving" | "saved" | "error"
@@ -64,6 +74,7 @@ export function SettingsModal() {
 		if (!isOpen) return;
 		setApiKey("");
 		setBaseUrl("");
+		setModel("");
 		setIsEditing(false);
 		setSaveStatus("idle");
 		setErrorMessage("");
@@ -76,7 +87,14 @@ export function SettingsModal() {
 		setIsEditing(false);
 		setApiKey("");
 		setBaseUrl("");
+		setModel("");
 	}, [selectedProvider]);
+
+	useEffect(() => {
+		if (data?.providers?.[selectedProvider]?.model) {
+			setModel(data.providers[selectedProvider].model as string);
+		}
+	}, [data, selectedProvider]);
 
 	if (!isOpen) return null;
 
@@ -101,6 +119,7 @@ export function SettingsModal() {
 				provider: selectedProvider,
 				apiKey: apiKey || "",
 				baseUrl: needsBaseUrl ? baseUrl : undefined,
+				model: model || undefined,
 			},
 			{
 				onSuccess: () => {
@@ -174,6 +193,11 @@ export function SettingsModal() {
 						{needsApiKey && !isEditing && hasKey && (
 							<div>
 								<p className="font-mono text-[#888888] text-xs">{maskKey()}</p>
+								{data?.providers?.[selectedProvider]?.model && (
+									<p className="mt-0.5 font-mono text-[#666666] text-[10px]">
+										Model: {data.providers[selectedProvider].model}
+									</p>
+								)}
 								<button
 									type="button"
 									onClick={() => setIsEditing(true)}
@@ -185,27 +209,38 @@ export function SettingsModal() {
 						)}
 
 						{(isEditing || !hasKey) && (
-							<div className="space-y-2">
-								{needsApiKey && (
+								<div className="space-y-2">
+									{needsApiKey && (
+										<input
+											type="password"
+											value={apiKey}
+											onChange={(e) => setApiKey(e.target.value)}
+											placeholder={
+												PLACEHOLDERS[selectedProvider] ?? "Enter API key..."
+											}
+											className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
+										/>
+									)}
 									<input
-										type="password"
-										value={apiKey}
-										onChange={(e) => setApiKey(e.target.value)}
+										type="text"
+										value={model}
+										onChange={(e) => setModel(e.target.value)}
 										placeholder={
-											PLACEHOLDERS[selectedProvider] ?? "Enter API key..."
+											DEFAULT_MODELS[selectedProvider]
+												? `Default: ${DEFAULT_MODELS[selectedProvider]}`
+												: "Model..."
 										}
 										className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
 									/>
-								)}
-								{needsBaseUrl && (
-									<input
-										type="text"
-										value={baseUrl}
-										onChange={(e) => setBaseUrl(e.target.value)}
-										placeholder={PLACEHOLDERS.ollama}
-										className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
-									/>
-								)}
+									{needsBaseUrl && (
+										<input
+											type="text"
+											value={baseUrl}
+											onChange={(e) => setBaseUrl(e.target.value)}
+											placeholder={PLACEHOLDERS.ollama}
+											className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
+										/>
+									)}
 								<button
 									type="button"
 									onClick={handleSave}

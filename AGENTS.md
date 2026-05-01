@@ -130,8 +130,8 @@ All routes are `Content-Type: application/json`. All routes return `{ error: str
 
 ## AI Features
 
-- Model: User configurable. Use Cloudflare AI Gateway 
-- API creds are provided by the user in `/settings` and stored encrypted on disk after user's consent. 
+- Model: User configurable per provider in Settings. Defaults: Anthropic (`claude-sonnet-4-20250514`), OpenAI (`gpt-4o-mini`), Gemini (`gemini-2.0-flash`), Mistral (`mistral-small-latest`), Ollama (`llama3.2`), OpenAI-compatible (`gpt-4o-mini`).
+- API creds are provided by the user in `/settings` and stored encrypted on disk after user's consent.
 - All AI prompts are in `src/ai/prompts.ts`
 - Prompts must include the instruction to never hallucinate table or column names — only use what is provided in the prompt context
 

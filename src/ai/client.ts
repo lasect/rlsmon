@@ -1,5 +1,7 @@
 import { readSettings } from "../config/settings";
 
+const FETCH_TIMEOUT_MS = 120_000;
+
 type GenerateFn = (prompt: string) => Promise<string>;
 
 export function getAIClient(): { generate: GenerateFn } {
@@ -21,58 +23,83 @@ export function getAIClient(): { generate: GenerateFn } {
 	switch (provider) {
 		case "anthropic": {
 			const key = apiKey as string;
-			return createAnthropicClient(key);
+			const modelName = config?.model || "claude-sonnet-4-20250514";
+			return createAnthropicClient(key, modelName);
 		}
 		case "openai": {
 			const key = apiKey as string;
+			const modelName = config?.model || "gpt-4o-mini";
 			return createOpenAIClient(
 				"https://api.openai.com/v1/chat/completions",
 				key,
-				"gpt-4o-mini",
+				modelName,
 			);
 		}
 		case "mistral": {
 			const key = apiKey as string;
+			const modelName = config?.model || "mistral-small-latest";
 			return createOpenAIClient(
 				"https://api.mistral.ai/v1/chat/completions",
 				key,
-				"mistral-small-latest",
+				modelName,
 			);
 		}
 		case "gemini": {
 			const key = apiKey as string;
-			return createGeminiClient(key);
+			const modelName = config?.model || "gemini-2.0-flash";
+			return createGeminiClient(key, modelName);
 		}
-		case "ollama":
-			return createOllamaClient(baseUrl || "http://localhost:11434");
-		case "openai-compatible":
+		case "ollama": {
+			const modelName = config?.model || "llama3.2";
+			return createOllamaClient(baseUrl || "http://localhost:11434", modelName);
+		}
+		case "openai-compatible": {
+			const modelName = config?.model || "gpt-4o-mini";
 			return createOpenAIClient(
 				`${baseUrl || "http://localhost:11434/v1"}/chat/completions`,
 				apiKey || "",
-				"gpt-4o-mini",
+				modelName,
 			);
+		}
 		default:
 			throw new Error(`Unknown AI provider: ${provider}`);
 	}
 }
 
+function fetchWithTimeout(
+	url: string,
+	init: RequestInit,
+): Promise<Response> {
+	const controller = new AbortController();
+	const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+	return fetch(url, { ...init, signal: controller.signal }).finally(() =>
+		clearTimeout(id),
+	);
+}
+
 // Anthropic client
-function createAnthropicClient(apiKey: string): { generate: GenerateFn } {
+function createAnthropicClient(
+	apiKey: string,
+	model: string,
+): { generate: GenerateFn } {
 	return {
 		generate: async (prompt: string) => {
-			const response = await fetch("https://api.anthropic.com/v1/messages", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					"x-api-key": apiKey,
-					"anthropic-version": "2023-06-01",
+			const response = await fetchWithTimeout(
+				"https://api.anthropic.com/v1/messages",
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"x-api-key": apiKey,
+						"anthropic-version": "2023-06-01",
+					},
+					body: JSON.stringify({
+						model,
+						max_tokens: 1024,
+						messages: [{ role: "user", content: prompt }],
+					}),
 				},
-				body: JSON.stringify({
-					model: "claude-sonnet-4-20250514",
-					max_tokens: 1024,
-					messages: [{ role: "user", content: prompt }],
-				}),
-			});
+			);
 			const data = (await response.json()) as {
 				content: Array<{ text: string }>;
 				error?: { message: string };
@@ -102,7 +129,7 @@ function createOpenAIClient(
 			if (apiKey) {
 				headers.Authorization = `Bearer ${apiKey}`;
 			}
-			const response = await fetch(url, {
+			const response = await fetchWithTimeout(url, {
 				method: "POST",
 				headers,
 				body: JSON.stringify({
@@ -111,29 +138,39 @@ function createOpenAIClient(
 					max_tokens: 1024,
 				}),
 			});
+			if (!response.ok) {
+				const text = await response.text();
+				throw new Error(
+					`HTTP ${response.status}: ${text.slice(0, 500)}`,
+				);
+			}
 			const data = (await response.json()) as {
-				choices: Array<{ message: { content: string } }>;
+				choices: Array<{ message: { content: string | null } }>;
 				error?: { message: string };
 			};
 			if (data.error) {
 				throw new Error(data.error.message);
 			}
-			if (!data.choices?.[0]?.message) {
+			const content = data.choices?.[0]?.message?.content;
+			if (typeof content !== "string" || content.length === 0) {
 				throw new Error(
-					"Unexpected response format from OpenAI-compatible API",
+					"Unexpected response format from OpenAI-compatible API: empty or missing content",
 				);
 			}
-			return data.choices[0].message.content;
+			return content;
 		},
 	};
 }
 
 // Gemini client
-function createGeminiClient(apiKey: string): { generate: GenerateFn } {
+function createGeminiClient(
+	apiKey: string,
+	model: string,
+): { generate: GenerateFn } {
 	return {
 		generate: async (prompt: string) => {
-			const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-			const response = await fetch(url, {
+			const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+			const response = await fetchWithTimeout(url, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -145,6 +182,12 @@ function createGeminiClient(apiKey: string): { generate: GenerateFn } {
 					},
 				}),
 			});
+			if (!response.ok) {
+				const text = await response.text();
+				throw new Error(
+					`HTTP ${response.status}: ${text.slice(0, 500)}`,
+				);
+			}
 			const data = (await response.json()) as {
 				candidates: Array<{
 					content: { parts: Array<{ text: string }> };
@@ -163,26 +206,38 @@ function createGeminiClient(apiKey: string): { generate: GenerateFn } {
 }
 
 // Ollama client
-function createOllamaClient(baseUrl: string): { generate: GenerateFn } {
+function createOllamaClient(
+	baseUrl: string,
+	model: string,
+): { generate: GenerateFn } {
 	return {
 		generate: async (prompt: string) => {
-			const response = await fetch(`${baseUrl}/api/generate`, {
+			const response = await fetchWithTimeout(`${baseUrl}/api/generate`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
-					model: "llama3.2",
+					model,
 					prompt,
 					stream: false,
 				}),
 			});
+			if (!response.ok) {
+				const text = await response.text();
+				throw new Error(
+					`HTTP ${response.status}: ${text.slice(0, 500)}`,
+				);
+			}
 			const data = (await response.json()) as {
 				response: string;
 				error?: string;
 			};
 			if (data.error) {
 				throw new Error(data.error);
+			}
+			if (typeof data.response !== "string" || data.response.length === 0) {
+				throw new Error("Unexpected response format from Ollama API");
 			}
 			return data.response;
 		},

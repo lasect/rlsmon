@@ -13,6 +13,7 @@ export type Provider =
 export type ProviderConfig = {
 	apiKey?: string;
 	baseUrl?: string;
+	model?: string;
 };
 
 export type Settings = {

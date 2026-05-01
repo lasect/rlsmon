@@ -19,12 +19,16 @@ const providerSchema = z.enum([
 export const settingsRouter = router({
 	get: publicProcedure.query(() => {
 		const settings = readSettings();
-		const providers = {} as Record<Provider, { hasKey: boolean }>;
+		const providers = {} as Record<
+			Provider,
+			{ hasKey: boolean; model?: string }
+		>;
 		if (settings.providers) {
 			for (const key of providerSchema.options) {
 				const config = settings.providers[key];
 				providers[key] = {
 					hasKey: !!(config?.apiKey && config.apiKey.length > 0),
+					model: config?.model,
 				};
 			}
 		} else {
@@ -44,6 +48,7 @@ export const settingsRouter = router({
 				provider: providerSchema,
 				apiKey: z.string().min(1),
 				baseUrl: z.string().optional(),
+				model: z.string().optional(),
 			}),
 		)
 		.mutation(({ input }) => {
@@ -55,6 +60,7 @@ export const settingsRouter = router({
 					[input.provider]: {
 						apiKey: input.apiKey,
 						baseUrl: input.baseUrl,
+						model: input.model,
 					},
 				},
 			});

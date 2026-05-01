@@ -489,6 +489,28 @@ export function AuditPage() {
 						<span className="font-medium">CI/CD</span>
 					</Link>
 
+					{result && aiAvailable && (
+						<button
+							type="button"
+							onClick={handleSummarize}
+							disabled={summaryLoading}
+							className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
+						>
+							{summaryLoading ? (
+								<Loader2 className="size-3 animate-spin text-emerald-100" />
+							) : null}
+							<span className="font-mono font-semibold text-[11px] text-emerald-50">
+								{summaryLoading
+									? "Generating..."
+									: summaryError
+										? "Retry AI summary"
+										: summary
+											? "Regenerate AI summary"
+											: "Generate AI summary"}
+							</span>
+						</button>
+					)}
+
 					<button
 						type="button"
 						onClick={runAudit}
@@ -526,7 +548,7 @@ export function AuditPage() {
 						<div className="flex animate-pulse items-center gap-2 font-mono text-[11px] text-accent opacity-50">
 							✦ Generating summary...
 						</div>
-					) : summaryError && !summary ? (
+					) : summaryError ? (
 						<div className="space-y-1">
 							<div className="text-destructive text-xs">{summaryError}</div>
 							<button
@@ -551,15 +573,7 @@ export function AuditPage() {
 								↻ Regenerate
 							</button>
 						</div>
-					) : (
-						<button
-							type="button"
-							onClick={handleSummarize}
-							className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
-						>
-							✦ Generate AI summary
-						</button>
-					)}
+					) : null}
 				</div>
 			)}
 
