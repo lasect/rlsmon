@@ -312,12 +312,12 @@ export function MigrationCheckPanel({
 								{isLoading ? (
 									<>
 										<Loader2 className="size-3 animate-spin text-emerald-100" />
-										<span className="font-mono font-semibold text-emerald-50 text-[11px]">
+										<span className="font-mono font-semibold text-[11px] text-emerald-50">
 											Checking...
 										</span>
 									</>
 								) : (
-									<span className="font-mono font-semibold text-emerald-50 text-[11px]">
+									<span className="font-mono font-semibold text-[11px] text-emerald-50">
 										Check Migration
 									</span>
 								)}

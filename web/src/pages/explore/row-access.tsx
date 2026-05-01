@@ -695,7 +695,7 @@ export function RowAccessPage() {
 																	{col}
 																</th>
 															))}
-															<th 														className="w-10 border-border border-b bg-card" />
+															<th className="w-10 border-border border-b bg-card" />
 														</tr>
 													</thead>
 													<tbody>

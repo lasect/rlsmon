@@ -237,15 +237,15 @@ export function AuditPage() {
 	if (activeTab === "migration") {
 		return (
 			<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
-				<div className="mb-6 flex gap-0 border-b border-[#222222]">
+				<div className="mb-6 flex gap-0 border-[#222222] border-b">
 					<button
 						type="button"
 						onClick={() => setActiveTab("overview")}
 						className={cn(
-							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+							"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 							activeTab === "overview"
-								? "text-accent border-accent"
-								: "text-[#666666] border-transparent hover:text-[#999999]",
+								? "border-accent text-accent"
+								: "border-transparent text-[#666666] hover:text-[#999999]",
 						)}
 					>
 						Overview
@@ -254,10 +254,10 @@ export function AuditPage() {
 						type="button"
 						onClick={() => setActiveTab("migration")}
 						className={cn(
-							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+							"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 							activeTab === "migration"
-								? "text-accent border-accent"
-								: "text-[#666666] border-transparent hover:text-[#999999]",
+								? "border-accent text-accent"
+								: "border-transparent text-[#666666] hover:text-[#999999]",
 						)}
 					>
 						Migration Check
@@ -272,15 +272,15 @@ export function AuditPage() {
 
 	return (
 		<div className="flex h-full flex-col overflow-auto px-4 pt-3 pb-4">
-			<div className="mb-6 flex gap-0 border-b border-[#222222]">
+			<div className="mb-6 flex gap-0 border-[#222222] border-b">
 				<button
 					type="button"
 					onClick={() => setActiveTab("overview")}
 					className={cn(
-						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+						"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 						activeTab === "overview"
-							? "text-accent border-accent"
-							: "text-[#666666] border-transparent hover:text-[#999999]",
+							? "border-accent text-accent"
+							: "border-transparent text-[#666666] hover:text-[#999999]",
 					)}
 				>
 					Overview
@@ -289,10 +289,10 @@ export function AuditPage() {
 					type="button"
 					onClick={() => setActiveTab("migration")}
 					className={cn(
-						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+						"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 						activeTab === "migration"
-							? "text-accent border-accent"
-							: "text-[#666666] border-transparent hover:text-[#999999]",
+							? "border-accent text-accent"
+							: "border-transparent text-[#666666] hover:text-[#999999]",
 					)}
 				>
 					Migration Check
@@ -466,7 +466,7 @@ export function AuditPage() {
 						) : (
 							<Play className="size-3 text-emerald-100" />
 						)}
-						<span className="font-mono font-semibold text-emerald-50 text-[11px]">
+						<span className="font-mono font-semibold text-[11px] text-emerald-50">
 							{auditMutation.isPending ? "Scanning..." : "Run Audit"}
 						</span>
 					</button>

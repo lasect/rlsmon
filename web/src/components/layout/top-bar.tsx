@@ -1,4 +1,6 @@
+import { Settings } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSettings } from "@/context/settings-context";
 
 const navItems = [
 	{ label: "Audit", href: "/audit", activeFor: ["/audit", "/audit/ci"] },
@@ -15,6 +17,7 @@ const navItems = [
 export function TopBar() {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const { open: openSettings } = useSettings();
 	const isConnected = true;
 
 	const isNavActive = (activeFor: string[]) => {
@@ -64,24 +67,34 @@ export function TopBar() {
 				})}
 			</nav>
 
-			{/* Right: connection status */}
-			<div className="flex items-center gap-1.5">
-				<span
-					className="text-[10px]"
-					style={{
-						color: isConnected ? "var(--color-accent)" : "#ff4444",
-					}}
+			{/* Right: settings + connection status */}
+			<div className="flex items-center gap-2">
+				<button
+					type="button"
+					onClick={openSettings}
+					className="cursor-pointer rounded p-0.5 text-[#666666] hover:bg-[#1a1a1a] hover:text-[#cccccc]"
+					aria-label="Settings"
 				>
-					●
-				</span>
-				<span
-					className="font-mono text-[10px]"
-					style={{
-						color: isConnected ? "var(--color-accent)" : "#ff4444",
-					}}
-				>
-					{isConnected ? "connected" : "disconnected"}
-				</span>
+					<Settings className="size-3.5" />
+				</button>
+				<div className="flex items-center gap-1.5">
+					<span
+						className="text-[10px]"
+						style={{
+							color: isConnected ? "var(--color-accent)" : "#ff4444",
+						}}
+					>
+						●
+					</span>
+					<span
+						className="font-mono text-[10px]"
+						style={{
+							color: isConnected ? "var(--color-accent)" : "#ff4444",
+						}}
+					>
+						{isConnected ? "connected" : "disconnected"}
+					</span>
+				</div>
 			</div>
 		</header>
 	);

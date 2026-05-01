@@ -248,7 +248,7 @@ function TakeSnapshotPopover({
 						size="sm"
 						onClick={() => onSave(label)}
 						disabled={isLoading || !label.trim()}
-						className="h-7 bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
+						className="h-7 bg-emerald-700/90 font-mono font-semibold text-[11px] text-emerald-50 hover:bg-emerald-700"
 					>
 						{isLoading ? <Loader2 className="size-3 animate-spin" /> : "Save"}
 					</Button>
@@ -328,15 +328,15 @@ export function HistoryPage() {
 	if (activeTab === "migration") {
 		return (
 			<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
-				<div className="mb-6 flex gap-0 border-b border-[#222222]">
+				<div className="mb-6 flex gap-0 border-[#222222] border-b">
 					<button
 						type="button"
 						onClick={() => setActiveTab("snapshots")}
 						className={cn(
-							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+							"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 							activeTab === "snapshots"
-								? "text-accent border-accent"
-								: "text-[#666666] border-transparent hover:text-[#999999]",
+								? "border-accent text-accent"
+								: "border-transparent text-[#666666] hover:text-[#999999]",
 						)}
 					>
 						Snapshots
@@ -345,10 +345,10 @@ export function HistoryPage() {
 						type="button"
 						onClick={() => setActiveTab("migration")}
 						className={cn(
-							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+							"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 							activeTab === "migration"
-								? "text-accent border-accent"
-								: "text-[#666666] border-transparent hover:text-[#999999]",
+								? "border-accent text-accent"
+								: "border-transparent text-[#666666] hover:text-[#999999]",
 						)}
 					>
 						Migration Check
@@ -367,15 +367,15 @@ export function HistoryPage() {
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
-			<div className="mb-6 flex gap-0 border-b border-[#222222]">
+			<div className="mb-6 flex gap-0 border-[#222222] border-b">
 				<button
 					type="button"
 					onClick={() => setActiveTab("snapshots")}
 					className={cn(
-						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+						"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 						activeTab === "snapshots"
-							? "text-accent border-accent"
-							: "text-[#666666] border-transparent hover:text-[#999999]",
+							? "border-accent text-accent"
+							: "border-transparent text-[#666666] hover:text-[#999999]",
 					)}
 				>
 					Snapshots
@@ -384,10 +384,10 @@ export function HistoryPage() {
 					type="button"
 					onClick={() => setActiveTab("migration")}
 					className={cn(
-						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
+						"-mb-[2px] cursor-pointer border-b-2 px-4 py-2 font-mono text-xs transition-colors",
 						activeTab === "migration"
-							? "text-accent border-accent"
-							: "text-[#666666] border-transparent hover:text-[#999999]",
+							? "border-accent text-accent"
+							: "border-transparent text-[#666666] hover:text-[#999999]",
 					)}
 				>
 					Migration Check
@@ -411,7 +411,7 @@ export function HistoryPage() {
 					<Button
 						size="sm"
 						onClick={() => setShowPopover(!showPopover)}
-						className="bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
+						className="bg-emerald-700/90 font-mono font-semibold text-[11px] text-emerald-50 hover:bg-emerald-700"
 					>
 						<Camera className="mr-2 size-3.5" />
 						Take Snapshot
@@ -481,7 +481,7 @@ export function HistoryPage() {
 					<Button
 						size="sm"
 						onClick={() => setShowPopover(true)}
-						className="mt-4 bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
+						className="mt-4 bg-emerald-700/90 font-mono font-semibold text-[11px] text-emerald-50 hover:bg-emerald-700"
 					>
 						<Camera className="mr-2 size-3.5" />
 						Take Snapshot

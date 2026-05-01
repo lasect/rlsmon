@@ -432,7 +432,7 @@ export function SimulatePage() {
 												updateConfig({ claims: updated });
 											}}
 											placeholder="key"
-																		className="h-8 w-[35%] rounded-md border border-border bg-card px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
+											className="h-8 w-[35%] rounded-md border border-border bg-card px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
 										/>
 										<input
 											type="text"
@@ -443,7 +443,7 @@ export function SimulatePage() {
 												updateConfig({ claims: updated });
 											}}
 											placeholder="value"
-																		className="h-8 flex-1 rounded-md border border-border bg-card px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
+											className="h-8 flex-1 rounded-md border border-border bg-card px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
 										/>
 										<button
 											type="button"
@@ -488,7 +488,7 @@ export function SimulatePage() {
 									onClick={handleRun}
 									disabled={!canRun || isRunning}
 									size="sm"
-									className="h-9 bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
+									className="h-9 bg-emerald-700/90 font-mono font-semibold text-[11px] text-emerald-50 hover:bg-emerald-700"
 								>
 									{isRunning ? (
 										<span className="flex items-center gap-2">Running...</span>
@@ -576,10 +576,10 @@ export function SimulatePage() {
 												<>
 													<tr
 														key={idx}
-												className={cn(
-													"group cursor-pointer transition-colors hover:bg-card",
-													isExpanded && "bg-card",
-												)}
+														className={cn(
+															"group cursor-pointer transition-colors hover:bg-card",
+															isExpanded && "bg-card",
+														)}
 														onClick={() => toggleRowExpansion(idx)}
 													>
 														<td className="w-8 border-border border-b px-2 py-3 text-center">
@@ -604,7 +604,7 @@ export function SimulatePage() {
 																colSpan={results.columns.length + 1}
 																className="border-border border-b"
 															>
-																<div 																	className="mx-4 my-3 rounded-md border-emerald-500/50 border-l-2 bg-card px-4 py-3">
+																<div className="mx-4 my-3 rounded-md border-emerald-500/50 border-l-2 bg-card px-4 py-3">
 																	<div className="flex items-center gap-2">
 																		<h3 className="font-medium text-sm text-text">
 																			Why is this row visible?

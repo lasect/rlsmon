@@ -72,10 +72,10 @@ export function RowDrawer({ open, onClose, row, columns }: RowDrawerProps) {
 									{col}
 								</div>
 								<pre
-								className={cn(
-									"whitespace-pre-wrap break-all rounded bg-card p-2 font-mono text-[11px]",
-									row[col] === null && "text-muted-foreground italic",
-								)}
+									className={cn(
+										"whitespace-pre-wrap break-all rounded bg-card p-2 font-mono text-[11px]",
+										row[col] === null && "text-muted-foreground italic",
+									)}
 								>
 									{formatValue(row[col])}
 								</pre>
