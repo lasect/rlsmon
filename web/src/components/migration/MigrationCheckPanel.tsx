@@ -245,7 +245,7 @@ export function MigrationCheckPanel({
 					<p className="mt-2 text-green-400 text-xs">{filename} loaded</p>
 				)}
 
-				<div className="mt-0 rounded-lg border border-border/50 bg-card/40 p-3">
+				<div className="mt-0 rounded-lg border border-border/50 bg-card p-3">
 					<div className="space-y-4">
 						<div>
 							<label className="mb-1.5 block font-medium text-muted-foreground text-xs">
@@ -583,7 +583,7 @@ function FindingCard({
 	return (
 		<div
 			className={cn(
-				"rounded border border-border/70 border-l-4 bg-card/60 px-3 py-2.5",
+				"rounded border border-border/70 border-l-4 bg-card px-3 py-2.5",
 				severityStyles.border,
 			)}
 		>

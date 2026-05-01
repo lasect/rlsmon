@@ -51,7 +51,7 @@ rlsmon/
 - React SPA built with Vite
 - All routes defined in `src/App.tsx`
 - Global state (connection meta, active persona) managed via React Context or Zustand
-- API calls abstracted into `src/api/` — one file per domain (matrix, policies, roles, simulate, audit, ai, snapshots)
+- API calls abstracted into `src/api/` — one file per domain (policies, roles, simulate, audit, ai, snapshots)
 - Active persona (role + jwt claims) persisted in component state, shown in bottom status bar globally
 
 ---
@@ -81,8 +81,7 @@ All routes are `Content-Type: application/json`. All routes return `{ error: str
 
 | Route | Page |
 |-------|------|
-| `/` | Redirects to `/explore/matrix` |
-| `/explore/matrix` | Access matrix (hero page) |
+| `/` | Redirects to `/audit` |
 | `/explore/policies` | Policy explorer |
 | `/explore/roles` | Role explorer |
 | `/explore/row-access` | Effective permissions explorer |

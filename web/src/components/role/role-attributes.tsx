@@ -35,7 +35,7 @@ export function RoleAttributes({ role }: RoleAttributesProps) {
 function Attr({ label, value }: { label: string; value: boolean | string }) {
 	const isBool = typeof value === "boolean";
 	return (
-		<div className="flex items-center justify-between rounded bg-muted/30 px-2 py-1">
+		<div className="flex items-center justify-between rounded bg-card px-2 py-1">
 			<span className="text-[11px] text-muted-foreground">{label}</span>
 			<span
 				className={cn(

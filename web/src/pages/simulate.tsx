@@ -85,7 +85,7 @@ function ModeToggle({
 	onChange: (mode: SimMode) => void;
 }) {
 	return (
-		<div className="flex h-8 rounded-full border border-border bg-surface-raised p-0.5">
+		<div className="flex h-8 rounded-full border border-border bg-card p-0.5">
 			<button
 				type="button"
 				onClick={() => onChange("table")}
@@ -338,7 +338,7 @@ export function SimulatePage() {
 
 	return (
 		<div className="flex h-full">
-			<div className="flex w-[34%] min-w-[320px] max-w-[400px] shrink-0 flex-col border-border border-r bg-surface">
+			<div className="flex w-[34%] min-w-[320px] max-w-[400px] shrink-0 flex-col border-border border-r">
 				<div className="flex-shrink-0 border-border border-b px-4 py-3">
 					<h1 className="font-medium text-sm text-text">
 						Explainable Simulation
@@ -432,7 +432,7 @@ export function SimulatePage() {
 												updateConfig({ claims: updated });
 											}}
 											placeholder="key"
-											className="h-8 w-[35%] rounded-md border border-border bg-surface-raised px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
+																		className="h-8 w-[35%] rounded-md border border-border bg-card px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
 										/>
 										<input
 											type="text"
@@ -443,7 +443,7 @@ export function SimulatePage() {
 												updateConfig({ claims: updated });
 											}}
 											placeholder="value"
-											className="h-8 flex-1 rounded-md border border-border bg-surface-raised px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
+																		className="h-8 flex-1 rounded-md border border-border bg-card px-2 font-mono text-xs placeholder:text-text-muted focus:border-emerald-500/50 focus:outline-none"
 										/>
 										<button
 											type="button"
@@ -488,7 +488,7 @@ export function SimulatePage() {
 									onClick={handleRun}
 									disabled={!canRun || isRunning}
 									size="sm"
-									className="h-9"
+									className="h-9 bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
 								>
 									{isRunning ? (
 										<span className="flex items-center gap-2">Running...</span>
@@ -511,7 +511,7 @@ export function SimulatePage() {
 				</div>
 			</div>
 
-			<div className="flex flex-1 flex-col overflow-hidden bg-surface-raised">
+			<div className="flex flex-1 flex-col overflow-hidden">
 				{config.mode === "row-access" &&
 					config.table &&
 					(!hasRun || !results?.canAccess) && (
@@ -541,7 +541,7 @@ export function SimulatePage() {
 					results &&
 					results.rows.length > 0 && (
 						<div className="flex flex-1 flex-col overflow-hidden">
-							<div className="flex-shrink-0 border-border border-b bg-surface-raised px-4 py-3">
+							<div className="flex-shrink-0 border-border border-b bg-card px-4 py-3">
 								<h2 className="font-medium text-sm text-text">
 									Simulation Result
 								</h2>
@@ -556,13 +556,13 @@ export function SimulatePage() {
 
 							<div className="flex-1 overflow-auto">
 								<table className="w-full text-left text-xs">
-									<thead className="sticky top-0 bg-surface-raised">
+									<thead className="sticky top-0 bg-card">
 										<tr>
-											<th className="w-8 border-border border-b bg-surface" />
+											<th className="w-8 border-border border-b bg-card" />
 											{results.columns.map((col: string) => (
 												<th
 													key={col}
-													className="border-border border-b bg-surface px-3 py-2.5 font-medium text-text-muted uppercase tracking-wider"
+													className="border-border border-b bg-card px-3 py-2.5 font-medium text-text-muted uppercase tracking-wider"
 												>
 													{col}
 												</th>
@@ -576,10 +576,10 @@ export function SimulatePage() {
 												<>
 													<tr
 														key={idx}
-														className={cn(
-															"group cursor-pointer transition-colors hover:bg-surface",
-															isExpanded && "bg-surface",
-														)}
+												className={cn(
+													"group cursor-pointer transition-colors hover:bg-card",
+													isExpanded && "bg-card",
+												)}
 														onClick={() => toggleRowExpansion(idx)}
 													>
 														<td className="w-8 border-border border-b px-2 py-3 text-center">
@@ -599,12 +599,12 @@ export function SimulatePage() {
 														))}
 													</tr>
 													{isExpanded && (
-														<tr className="bg-surface">
+														<tr className="bg-card">
 															<td
 																colSpan={results.columns.length + 1}
 																className="border-border border-b"
 															>
-																<div className="mx-4 my-3 rounded-md border-emerald-500/50 border-l-2 bg-surface-raised px-4 py-3">
+																<div 																	className="mx-4 my-3 rounded-md border-emerald-500/50 border-l-2 bg-card px-4 py-3">
 																	<div className="flex items-center gap-2">
 																		<h3 className="font-medium text-sm text-text">
 																			Why is this row visible?
@@ -676,7 +676,7 @@ export function SimulatePage() {
 									← Back to browse
 								</button>
 
-								<div className="mb-4 rounded-sm border border-border bg-surface p-3">
+								<div className="mb-4 rounded-sm border border-border bg-card p-3">
 									<p className="mb-2 font-mono text-[10px] text-text-dim uppercase tracking-widest">
 										SELECTED ROW
 									</p>
@@ -730,7 +730,7 @@ export function SimulatePage() {
 												results.canAccess?.map((item) => (
 													<div
 														key={item.role}
-														className="mb-1 flex items-center justify-between rounded-sm border-accent/30 border-l-2 bg-surface px-3 py-2"
+														className="mb-1 flex items-center justify-between rounded-sm border-accent/30 border-l-2 bg-card px-3 py-2"
 													>
 														<span className="font-mono text-text text-xs">
 															{item.role}
@@ -772,7 +772,7 @@ export function SimulatePage() {
 												results.cannotAccess?.map((item) => (
 													<div
 														key={item.role}
-														className="mb-1 flex items-center justify-between rounded-sm border-critical/20 border-l-2 bg-surface px-3 py-2"
+														className="mb-1 flex items-center justify-between rounded-sm border-critical/20 border-l-2 bg-card px-3 py-2"
 													>
 														<span className="font-mono text-text text-xs">
 															{item.role}
@@ -889,7 +889,7 @@ function RowSelector({
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			<div className="flex-shrink-0 space-y-1 border-border border-b bg-surface px-4 py-2">
+			<div className="flex-shrink-0 space-y-1 border-border border-b bg-card px-4 py-2">
 				<div className="flex items-center gap-3">
 					<span className="font-mono text-accent text-sm">{tableName}</span>
 					<span className="font-mono text-[10px] text-text-muted">
@@ -902,7 +902,7 @@ function RowSelector({
 			</div>
 			<div className="flex-1 overflow-auto">
 				<table className="w-full text-left text-xs">
-					<thead className="sticky top-0 bg-surface-raised">
+					<thead className="sticky top-0 bg-card">
 						<tr>
 							{columns.map((col) => (
 								<th
@@ -923,7 +923,7 @@ function RowSelector({
 								<tr
 									key={i}
 									className={cn(
-										"group cursor-pointer transition-colors hover:bg-surface-raised",
+										"group cursor-pointer transition-colors hover:bg-card",
 										isSelected && "border-accent border-l-2 bg-accent/5",
 									)}
 									onClick={() => handleSelect(row)}

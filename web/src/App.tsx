@@ -7,7 +7,6 @@ import { AppShell } from "@/components/layout/app-shell";
 import { AiPage } from "@/pages/ai";
 import { AuditPage } from "@/pages/audit";
 import { AuditCiPage } from "@/pages/audit/ci";
-import { MatrixPage } from "@/pages/explore/matrix";
 import { PoliciesPage } from "@/pages/explore/policies";
 import { RolesPage } from "@/pages/explore/roles";
 import { HistoryPage } from "@/pages/history";
@@ -20,8 +19,7 @@ const router = createBrowserRouter([
 		path: "/",
 		element: <AppShell />,
 		children: [
-			{ index: true, element: <Navigate to="/explore/matrix" replace /> },
-			{ path: "explore/matrix", element: <MatrixPage /> },
+			{ index: true, element: <Navigate to="/audit" replace /> },
 			{ path: "explore/policies", element: <PoliciesPage /> },
 			{ path: "explore/roles", element: <RolesPage /> },
 			{ path: "simulate", element: <SimulatePage /> },

@@ -248,7 +248,7 @@ function TakeSnapshotPopover({
 						size="sm"
 						onClick={() => onSave(label)}
 						disabled={isLoading || !label.trim()}
-						className="h-7 bg-success text-success-foreground hover:bg-success/90"
+						className="h-7 bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
 					>
 						{isLoading ? <Loader2 className="size-3 animate-spin" /> : "Save"}
 					</Button>
@@ -411,7 +411,7 @@ export function HistoryPage() {
 					<Button
 						size="sm"
 						onClick={() => setShowPopover(!showPopover)}
-						className="bg-success text-success-foreground hover:bg-success/90"
+						className="bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
 					>
 						<Camera className="mr-2 size-3.5" />
 						Take Snapshot
@@ -481,7 +481,7 @@ export function HistoryPage() {
 					<Button
 						size="sm"
 						onClick={() => setShowPopover(true)}
-						className="mt-4 bg-success text-success-foreground hover:bg-success/90"
+						className="mt-4 bg-emerald-700/90 font-mono font-semibold text-emerald-50 text-[11px] hover:bg-emerald-700"
 					>
 						<Camera className="mr-2 size-3.5" />
 						Take Snapshot

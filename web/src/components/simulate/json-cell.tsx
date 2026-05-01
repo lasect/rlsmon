@@ -36,7 +36,7 @@ export function JsonCell({ value }: JsonCellProps) {
 
 	if (typeof value === "object") {
 		return expanded ? (
-			<pre className="mt-1 whitespace-pre-wrap break-all rounded bg-muted/30 p-2 font-mono text-[10px]">
+			<pre className="mt-1 whitespace-pre-wrap break-all rounded bg-card p-2 font-mono text-[10px]">
 				{formatJson(value)}
 			</pre>
 		) : (
@@ -53,7 +53,7 @@ export function JsonCell({ value }: JsonCellProps) {
 	const strValue = String(value);
 	if (isValidJson(strValue)) {
 		return expanded ? (
-			<pre className="mt-1 whitespace-pre-wrap break-all rounded bg-muted/30 p-2 font-mono text-[10px]">
+			<pre className="mt-1 whitespace-pre-wrap break-all rounded bg-card p-2 font-mono text-[10px]">
 				{formatJson(JSON.parse(strValue))}
 			</pre>
 		) : (

@@ -1,4 +1,4 @@
-import { Crown, LayoutGrid, LogIn, Play, Users } from "lucide-react";
+import { Crown, LogIn, Play, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { InheritanceTree } from "@/components/role/inheritance-tree";
 import { RolePermissionsHeatmap } from "@/components/role/permissions-heatmap";
@@ -83,14 +83,6 @@ export function RoleDetail({
 					>
 						<Play className="size-3" />
 						Simulate
-					</button>
-					<button
-						type="button"
-						onClick={() => navigate("/explore/matrix")}
-						className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-					>
-						<LayoutGrid className="size-3" />
-						View in Matrix
 					</button>
 				</div>
 			</div>

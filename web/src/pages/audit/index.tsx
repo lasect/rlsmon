@@ -5,6 +5,7 @@ import {
 	Play,
 	Search,
 	Sparkles,
+	Terminal,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -236,15 +237,15 @@ export function AuditPage() {
 	if (activeTab === "migration") {
 		return (
 			<div className="flex h-full flex-col overflow-hidden px-4 pt-3 pb-4">
-				<div className="mb-3 flex gap-1">
+				<div className="mb-6 flex gap-0 border-b border-[#222222]">
 					<button
 						type="button"
 						onClick={() => setActiveTab("overview")}
 						className={cn(
-							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 							activeTab === "overview"
-								? "bg-primary/10 text-primary"
-								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+								? "text-accent border-accent"
+								: "text-[#666666] border-transparent hover:text-[#999999]",
 						)}
 					>
 						Overview
@@ -253,10 +254,10 @@ export function AuditPage() {
 						type="button"
 						onClick={() => setActiveTab("migration")}
 						className={cn(
-							"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+							"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 							activeTab === "migration"
-								? "bg-primary/10 text-primary"
-								: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+								? "text-accent border-accent"
+								: "text-[#666666] border-transparent hover:text-[#999999]",
 						)}
 					>
 						Migration Check
@@ -271,15 +272,15 @@ export function AuditPage() {
 
 	return (
 		<div className="flex h-full flex-col overflow-auto px-4 pt-3 pb-4">
-			<div className="mb-3 flex gap-1">
+			<div className="mb-6 flex gap-0 border-b border-[#222222]">
 				<button
 					type="button"
 					onClick={() => setActiveTab("overview")}
 					className={cn(
-						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 						activeTab === "overview"
-							? "bg-primary/10 text-primary"
-							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+							? "text-accent border-accent"
+							: "text-[#666666] border-transparent hover:text-[#999999]",
 					)}
 				>
 					Overview
@@ -288,10 +289,10 @@ export function AuditPage() {
 					type="button"
 					onClick={() => setActiveTab("migration")}
 					className={cn(
-						"rounded px-2.5 py-1 font-medium text-xs transition-colors",
+						"px-4 py-2 font-mono text-xs cursor-pointer transition-colors border-b-2 -mb-[2px]",
 						activeTab === "migration"
-							? "bg-primary/10 text-primary"
-							: "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+							? "text-accent border-accent"
+							: "text-[#666666] border-transparent hover:text-[#999999]",
 					)}
 				>
 					Migration Check
@@ -412,42 +413,63 @@ export function AuditPage() {
 							)}
 						</>
 					) : null}
+					{result && (
+						<div className="mt-3 flex flex-wrap items-center gap-2">
+							<div className="relative min-w-[220px] max-w-sm flex-1">
+								<Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+								<Input
+									value={search}
+									onChange={(event) => setSearch(event.target.value)}
+									placeholder="Search by table or check..."
+									className="h-8 pl-8 text-xs"
+								/>
+							</div>
+							{(["all", ...AUDIT_SEVERITY_ORDER] as const).map((option) => (
+								<button
+									key={option}
+									type="button"
+									onClick={() => setSeverityFilter(option)}
+									className={cn(
+										"rounded-md border px-2.5 py-1 font-medium text-[11px] transition-colors",
+										severityFilter === option
+											? "border-primary bg-primary/10 text-primary"
+											: "border-border text-muted-foreground hover:bg-muted",
+									)}
+								>
+									{option === "all"
+										? "All"
+										: option.charAt(0).toUpperCase() + option.slice(1)}
+								</button>
+							))}
+						</div>
+					)}
 				</div>
 
-				<div className="flex items-center gap-2">
-					<Button variant="outline" size="sm" asChild>
-						<Link
-							className="rounded-sm border border-[#333333] px-3 py-1.5 font-mono text-[#888888] text-xs transition-colors hover:border-[#555555] hover:text-[#cccccc]"
-							to="/audit/ci"
-						>
-							CI Mode →
-						</Link>
-					</Button>
-					<Button
-						size="sm"
+				{/* Right side */}
+				<div className="flex shrink-0 items-center gap-3">
+					<Link
+						to="/audit/ci"
+						className="flex items-center gap-1.5 rounded-lg border border-border/70 px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+					>
+						<Terminal className="size-3.5" />
+						<span className="font-medium">CI/CD</span>
+					</Link>
+
+					<button
+						type="button"
 						onClick={runAudit}
 						disabled={auditMutation.isPending}
-						className="flex items-center gap-2 rounded-sm px-3 py-1.5 font-mono font-semibold text-[#0a0a0a] text-xs transition-colors"
-						style={{ backgroundColor: "#00c27a" }}
-						onMouseEnter={(e) =>
-							(e.currentTarget.style.backgroundColor = "#00a866")
-						}
-						onMouseLeave={(e) =>
-							(e.currentTarget.style.backgroundColor = "#00c27a")
-						}
+						className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
 					>
 						{auditMutation.isPending ? (
-							<>
-								<Loader2 className="size-3.5 animate-spin" />
-								Scanning...
-							</>
+							<Loader2 className="size-3 animate-spin text-emerald-100" />
 						) : (
-							<>
-								<Play className="size-3.5" />
-								Run Audit
-							</>
+							<Play className="size-3 text-emerald-100" />
 						)}
-					</Button>
+						<span className="font-mono font-semibold text-emerald-50 text-[11px]">
+							{auditMutation.isPending ? "Scanning..." : "Run Audit"}
+						</span>
+					</button>
 				</div>
 			</div>
 
@@ -474,35 +496,6 @@ export function AuditPage() {
 
 			{result && (
 				<>
-					<div className="mt-4 flex flex-wrap items-center gap-2">
-						<div className="relative min-w-[220px] max-w-sm flex-1">
-							<Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								value={search}
-								onChange={(event) => setSearch(event.target.value)}
-								placeholder="Search by table or check..."
-								className="h-8 pl-8 text-xs"
-							/>
-						</div>
-						{(["all", ...AUDIT_SEVERITY_ORDER] as const).map((option) => (
-							<button
-								key={option}
-								type="button"
-								onClick={() => setSeverityFilter(option)}
-								className={cn(
-									"rounded-md border px-2.5 py-1 font-medium text-[11px] transition-colors",
-									severityFilter === option
-										? "border-primary bg-primary/10 text-primary"
-										: "border-border text-muted-foreground hover:bg-muted",
-								)}
-							>
-								{option === "all"
-									? "All"
-									: option.charAt(0).toUpperCase() + option.slice(1)}
-							</button>
-						))}
-					</div>
-
 					{checkGroupings.length === 0 ? (
 						<div className="mt-4 rounded-lg border border-border border-dashed px-4 py-8 text-center text-muted-foreground text-sm">
 							No findings match the current filters.
@@ -574,7 +567,7 @@ function CheckFindingsRow({
 				type="button"
 				onClick={onToggle}
 				className={cn(
-					"flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-raised",
+					"flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/5",
 				)}
 			>
 				{expanded ? (

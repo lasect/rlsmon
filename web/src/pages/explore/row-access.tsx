@@ -610,7 +610,7 @@ export function RowAccessPage() {
 															{rowsQuery.data.columns.map((col) => (
 																<th
 																	key={col}
-																	className="border-border border-b bg-muted/30 px-3 py-1.5 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-wider"
+																	className="border-border border-b bg-card px-3 py-1.5 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-wider"
 																>
 																	{col}
 																</th>
@@ -690,12 +690,12 @@ export function RowAccessPage() {
 															{rowsQuery.data.columns.map((col) => (
 																<th
 																	key={col}
-																	className="border-border border-b bg-muted/30 px-3 py-1.5 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-wider"
+																	className="border-border border-b bg-card px-3 py-1.5 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-wider"
 																>
 																	{col}
 																</th>
 															))}
-															<th className="w-10 border-border border-b bg-muted/30" />
+															<th 														className="w-10 border-border border-b bg-card" />
 														</tr>
 													</thead>
 													<tbody>

@@ -18,7 +18,7 @@ export function CodeBlock({ code, label, className }: CodeBlockProps) {
 	};
 
 	return (
-		<div className={cn("relative rounded-md border bg-muted/30", className)}>
+		<div className={cn("relative rounded-md border bg-card", className)}>
 			{label && (
 				<div className="flex items-center justify-between border-border border-b px-3 py-1.5">
 					<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">

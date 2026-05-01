@@ -208,7 +208,7 @@ function AnnotationDisplay({
 					<div className="mb-1 text-[10px] text-muted-foreground uppercase">
 						Note
 					</div>
-					<div className="rounded bg-muted/30 p-2 text-xs">
+					<div className="rounded bg-card p-2 text-xs">
 						{annotation.note}
 					</div>
 				</div>

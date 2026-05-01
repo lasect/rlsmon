@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
-	{ label: "Matrix", href: "/explore/matrix", activeFor: ["/explore/matrix"] },
+	{ label: "Audit", href: "/audit", activeFor: ["/audit", "/audit/ci"] },
 	{
 		label: "Policies",
 		href: "/explore/policies",
@@ -9,7 +9,6 @@ const navItems = [
 	},
 	{ label: "Roles", href: "/explore/roles", activeFor: ["/explore/roles"] },
 	{ label: "Simulate", href: "/simulate", activeFor: ["/simulate"] },
-	{ label: "Audit", href: "/audit", activeFor: ["/audit", "/audit/ci"] },
 	{ label: "History", href: "/history", activeFor: ["/history", "/history/"] },
 ];
 
@@ -33,7 +32,7 @@ export function TopBar() {
 			<div className="flex items-center">
 				<button
 					type="button"
-					onClick={() => navigate("/explore/matrix")}
+					onClick={() => navigate("/audit")}
 					className="cursor-pointer font-bold font-mono text-accent text-sm"
 				>
 					RLSMon
