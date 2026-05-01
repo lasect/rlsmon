@@ -6,7 +6,6 @@ import { useSettings } from "@/context/settings-context";
 type Provider =
 	| "anthropic"
 	| "openai"
-	| "groq"
 	| "gemini"
 	| "mistral"
 	| "ollama"
@@ -15,7 +14,6 @@ type Provider =
 const PROVIDERS: { key: Provider; label: string }[] = [
 	{ key: "anthropic", label: "Anthropic" },
 	{ key: "openai", label: "OpenAI" },
-	{ key: "groq", label: "Groq" },
 	{ key: "gemini", label: "Gemini" },
 	{ key: "mistral", label: "Mistral" },
 	{ key: "ollama", label: "Ollama" },
@@ -25,7 +23,6 @@ const PROVIDERS: { key: Provider; label: string }[] = [
 const PLACEHOLDERS: Partial<Record<Provider, string>> = {
 	anthropic: "sk-ant-...",
 	openai: "sk-...",
-	groq: "Enter API key...",
 	gemini: "Enter API key...",
 	mistral: "Enter API key...",
 	ollama: "http://localhost:11434",
@@ -35,7 +32,6 @@ const PLACEHOLDERS: Partial<Record<Provider, string>> = {
 const PROVIDER_NAMES: Record<Provider, string> = {
 	anthropic: "ANTHROPIC",
 	openai: "OPENAI",
-	groq: "GROQ",
 	gemini: "GEMINI",
 	mistral: "MISTRAL",
 	ollama: "OLLAMA",

@@ -7,6 +7,7 @@ import { CodeBlock } from "@/components/code-block";
 import { CommandBadge } from "@/components/command-badge";
 import { FilterBar } from "@/components/filter-bar";
 import { Separator } from "@/components/ui/separator";
+import { useAiAvailable } from "@/hooks/use-ai-available";
 import { cn } from "@/lib/utils";
 
 type AnnotationStatusFilter =
@@ -261,6 +262,12 @@ export function PoliciesPage() {
 	const [annotationFilter, setAnnotationFilter] =
 		useState<AnnotationStatusFilter>("all");
 	const [isEditingAnnotation, setIsEditingAnnotation] = useState(false);
+	const [explainCache, setExplainCache] = useState<Record<string, string>>({});
+	const [explainLoading, setExplainLoading] = useState(false);
+	const [explainError, setExplainError] = useState<string | null>(null);
+
+	const { available: aiAvailable, openSettings } = useAiAvailable();
+	const explainMutation = trpc.ai.explain.useMutation();
 
 	const [searchParams] = useSearchParams();
 
@@ -384,6 +391,41 @@ export function PoliciesPage() {
 		policy: string,
 	) => {
 		deleteMutation.mutate({ schema, table, policy });
+	};
+
+	const handleExplain = async () => {
+		if (!selected) return;
+		const cacheKey = `${selected.name}:${selected.schema}:${selected.table}`;
+		setExplainLoading(true);
+		setExplainError(null);
+
+		try {
+			const result = await explainMutation.mutateAsync({
+				policyName: selected.name,
+				schema: selected.schema,
+				table: selected.table,
+				cmd: selected.command,
+				permissive: selected.permissive,
+				roles: selected.roles,
+				using: selected.using,
+				withCheck: selected.withCheck,
+			});
+
+			if ("error" in result && result.error) {
+				setExplainError(
+					(result as { message?: string }).message ?? "AI explanation failed",
+				);
+			} else if ("explanation" in result) {
+				setExplainCache((prev) => ({
+					...prev,
+					[cacheKey]: result.explanation,
+				}));
+			}
+		} catch (e) {
+			setExplainError(e instanceof Error ? e.message : "Unknown error");
+		} finally {
+			setExplainLoading(false);
+		}
 	};
 
 	return (
@@ -561,6 +603,75 @@ export function PoliciesPage() {
 									</span>
 								</div>
 							)}
+
+							<Separator className="my-4" />
+
+							<div className="space-y-1.5">
+								<div className="font-mono text-[#666666] text-[10px] uppercase tracking-widest">
+									AI Explanation
+								</div>
+								{explainLoading ? (
+									<div className="animate-pulse font-mono text-[11px] text-accent opacity-50">
+										✦ Explaining...
+									</div>
+								) : explainError &&
+									!explainCache[
+										`${selected.name}:${selected.schema}:${selected.table}`
+									] ? (
+									<div className="space-y-1">
+										<div className="text-destructive text-xs">
+											{explainError}
+										</div>
+										<button
+											type="button"
+											onClick={handleExplain}
+											className="font-mono text-[11px] text-accent hover:underline"
+										>
+											↻ Retry
+										</button>
+									</div>
+								) : explainCache[
+										`${selected.name}:${selected.schema}:${selected.table}`
+									] ? (
+									<div className="space-y-1">
+										<div className="font-sans text-[#cccccc] text-xs">
+											{
+												explainCache[
+													`${selected.name}:${selected.schema}:${selected.table}`
+												]
+											}
+										</div>
+										<button
+											type="button"
+											onClick={handleExplain}
+											className="font-mono text-[11px] text-accent hover:underline"
+										>
+											↻ Re-explain
+										</button>
+									</div>
+								) : !aiAvailable ? (
+									<div className="space-y-1">
+										<div className="text-muted-foreground text-xs">
+											Add an AI provider in Settings to use AI features
+										</div>
+										<button
+											type="button"
+											onClick={openSettings}
+											className="font-mono text-[11px] text-accent hover:underline"
+										>
+											Open Settings →
+										</button>
+									</div>
+								) : (
+									<button
+										type="button"
+										onClick={handleExplain}
+										className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+									>
+										✦ Explain this policy
+									</button>
+								)}
+							</div>
 
 							<Separator className="my-4" />
 

@@ -10,7 +10,6 @@ import { publicProcedure, router } from "../trpc";
 const providerSchema = z.enum([
 	"anthropic",
 	"openai",
-	"groq",
 	"gemini",
 	"mistral",
 	"ollama",

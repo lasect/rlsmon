@@ -31,14 +31,6 @@ export function getAIClient(): { generate: GenerateFn } {
 				"gpt-4o-mini",
 			);
 		}
-		case "groq": {
-			const key = apiKey as string;
-			return createOpenAIClient(
-				"https://api.groq.com/openai/v1/chat/completions",
-				key,
-				"llama-3.3-70b-versatile",
-			);
-		}
 		case "mistral": {
 			const key = apiKey as string;
 			return createOpenAIClient(
@@ -76,7 +68,7 @@ function createAnthropicClient(apiKey: string): { generate: GenerateFn } {
 					"anthropic-version": "2023-06-01",
 				},
 				body: JSON.stringify({
-					model: "claude-sonnet-4-5-20250929",
+					model: "claude-sonnet-4-20250514",
 					max_tokens: 1024,
 					messages: [{ role: "user", content: prompt }],
 				}),
@@ -96,7 +88,7 @@ function createAnthropicClient(apiKey: string): { generate: GenerateFn } {
 	};
 }
 
-// OpenAI-compatible client (OpenAI, Groq, Mistral, OpenAI-compatible)
+// OpenAI-compatible client (OpenAI, Mistral, OpenAI-compatible)
 function createOpenAIClient(
 	url: string,
 	apiKey: string,
@@ -140,7 +132,7 @@ function createOpenAIClient(
 function createGeminiClient(apiKey: string): { generate: GenerateFn } {
 	return {
 		generate: async (prompt: string) => {
-			const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+			const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 			const response = await fetch(url, {
 				method: "POST",
 				headers: {

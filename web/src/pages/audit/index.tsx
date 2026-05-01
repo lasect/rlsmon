@@ -4,7 +4,6 @@ import {
 	Loader2,
 	Play,
 	Search,
-	Sparkles,
 	Terminal,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -13,8 +12,8 @@ import { trpc } from "@/api/trpc";
 import { ApiErrorCard } from "@/components/api-error-card";
 import { MigrationCheckPanel } from "@/components/migration/MigrationCheckPanel";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAiAvailable } from "@/hooks/use-ai-available";
 import {
 	AUDIT_SEVERITY_ORDER,
 	type AuditFinding,
@@ -96,6 +95,10 @@ export function AuditPage() {
 	const [expandedChecks, setExpandedChecks] = useState<Set<string>>(new Set());
 	const [now, setNow] = useState(Date.now());
 	const [showUnprotected, setShowUnprotected] = useState(false);
+	const [summary, setSummary] = useState<string | null>(null);
+	const [summaryLoading, setSummaryLoading] = useState(false);
+	const [summaryError, setSummaryError] = useState<string | null>(null);
+
 	const {
 		data: coverageData,
 		isLoading: coverageLoading,
@@ -106,8 +109,10 @@ export function AuditPage() {
 			setResult(data);
 			setExpandedChecks(new Set());
 			saveStoredAuditResults(data);
+			setSummary(null);
 		},
 	});
+	const summarizeMutation = trpc.ai.summarize.useMutation();
 
 	useEffect(() => {
 		const interval = window.setInterval(() => {
@@ -222,6 +227,35 @@ export function AuditPage() {
 	const runAudit = () => {
 		auditMutation.reset();
 		auditMutation.mutate();
+	};
+
+	const { available: aiAvailable, openSettings } = useAiAvailable();
+
+	const handleSummarize = async () => {
+		if (!result) return;
+		setSummaryLoading(true);
+		setSummaryError(null);
+		try {
+			const res = await summarizeMutation.mutateAsync({
+				findings: result.findings.map((f) => ({
+					check: f.check,
+					severity: f.severity,
+					table: f.table,
+					message: f.message,
+				})),
+			});
+			if ("error" in res && res.error) {
+				setSummaryError(
+					(res as { message?: string }).message ?? "AI summary failed",
+				);
+			} else if ("summary" in res) {
+				setSummary(res.summary);
+			}
+		} catch (e) {
+			setSummaryError(e instanceof Error ? e.message : "Unknown error");
+		} finally {
+			setSummaryLoading(false);
+		}
 	};
 
 	if (auditMutation.error && !result) {
@@ -473,6 +507,62 @@ export function AuditPage() {
 				</div>
 			</div>
 
+			{result && (
+				<div className="mt-2">
+					{!aiAvailable ? (
+						<div className="flex items-center gap-2">
+							<span className="text-muted-foreground text-xs">
+								Add an AI provider in Settings to use AI features
+							</span>
+							<button
+								type="button"
+								onClick={openSettings}
+								className="font-mono text-[11px] text-accent hover:underline"
+							>
+								Open Settings →
+							</button>
+						</div>
+					) : summaryLoading ? (
+						<div className="flex animate-pulse items-center gap-2 font-mono text-[11px] text-accent opacity-50">
+							✦ Generating summary...
+						</div>
+					) : summaryError && !summary ? (
+						<div className="space-y-1">
+							<div className="text-destructive text-xs">{summaryError}</div>
+							<button
+								type="button"
+								onClick={handleSummarize}
+								className="font-mono text-[11px] text-accent hover:underline"
+							>
+								↻ Retry
+							</button>
+						</div>
+					) : summary ? (
+						<div className="space-y-1 rounded border border-border/70 bg-card p-3">
+							<div className="font-mono text-[#666666] text-[10px] uppercase tracking-widest">
+								AI Summary
+							</div>
+							<div className="font-sans text-[#cccccc] text-xs">{summary}</div>
+							<button
+								type="button"
+								onClick={handleSummarize}
+								className="font-mono text-[11px] text-accent hover:underline"
+							>
+								↻ Regenerate
+							</button>
+						</div>
+					) : (
+						<button
+							type="button"
+							onClick={handleSummarize}
+							className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+						>
+							✦ Generate AI summary
+						</button>
+					)}
+				</div>
+			)}
+
 			{auditMutation.isPending && (
 				<div className="mt-3 flex items-center gap-2 rounded-lg border border-border/70 bg-card px-4 py-3 text-sm">
 					<Loader2 className="size-4 animate-spin text-muted-foreground" />
@@ -555,11 +645,101 @@ function CheckFindingsRow({
 	onViewPolicies: (table: string) => void;
 	onSimulate: (table: string) => void;
 }) {
+	const { available: aiAvailable, openSettings } = useAiAvailable();
 	const styles = severityStyles(severity);
 	const tableCount = tables.length;
 
 	const sampleMessage = tables[0]?.message ?? "";
 	const sampleDetail = tables[0]?.detail ?? "";
+
+	const [explainCache, setExplainCache] = useState<Record<string, string>>({});
+	const [explainLoading, setExplainLoading] = useState(false);
+	const [explainError, setExplainError] = useState<string | null>(null);
+	const explainMutation = trpc.ai.explain.useMutation();
+
+	const [suggestExpanded, setSuggestExpanded] = useState(false);
+	const [suggestInput, setSuggestInput] = useState("");
+	const [suggestLoading, setSuggestLoading] = useState(false);
+	const [suggestError, setSuggestError] = useState<string | null>(null);
+	const [suggestResult, setSuggestResult] = useState<{
+		policyName: string;
+		sql: string;
+		explanation: string;
+	} | null>(null);
+	const [copied, setCopied] = useState(false);
+	const suggestMutation = trpc.ai.suggest.useMutation();
+
+	const firstTable = tables[0];
+	const explainCacheKey = `${check}:${firstTable?.table ?? ""}`;
+
+	const handleExplain = async () => {
+		if (!firstTable) return;
+		setExplainLoading(true);
+		setExplainError(null);
+		try {
+			const res = await explainMutation.mutateAsync({
+				policyName: check,
+				schema: firstTable.schema,
+				table: firstTable.table,
+				cmd: severity,
+				permissive: "permissive",
+				roles: firstTable.affectedRoles ?? [],
+				using: firstTable.message,
+				withCheck: null,
+			});
+			if ("error" in res && res.error) {
+				setExplainError(
+					(res as { message?: string }).message ?? "AI explanation failed",
+				);
+			} else if ("explanation" in res) {
+				setExplainCache((prev) => ({
+					...prev,
+					[explainCacheKey]: res.explanation,
+				}));
+			}
+		} catch (e) {
+			setExplainError(e instanceof Error ? e.message : "Unknown error");
+		} finally {
+			setExplainLoading(false);
+		}
+	};
+
+	const handleSuggest = async () => {
+		if (!firstTable) return;
+		setSuggestLoading(true);
+		setSuggestError(null);
+		try {
+			const res = await suggestMutation.mutateAsync({
+				schema: firstTable.schema,
+				table: firstTable.table,
+				intent: suggestInput,
+			});
+			if ("error" in res && res.error) {
+				setSuggestError(
+					(res as { message?: string }).message ?? "AI suggestion failed",
+				);
+			} else if ("policy" in res && res.policy) {
+				setSuggestResult({
+					policyName: res.policy.policyName,
+					sql: res.policy.sql,
+					explanation: res.policy.explanation,
+				});
+			}
+		} catch (e) {
+			setSuggestError(e instanceof Error ? e.message : "Unknown error");
+		} finally {
+			setSuggestLoading(false);
+		}
+	};
+
+	const handleCopySql = async () => {
+		if (!suggestResult) return;
+		await navigator.clipboard.writeText(suggestResult.sql);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 1500);
+	};
+
+	const cachedExplanation = explainCache[explainCacheKey];
 
 	return (
 		<div className="overflow-hidden rounded border border-border/70 bg-card">
@@ -661,10 +841,151 @@ function CheckFindingsRow({
 								);
 							})}
 						</div>
-						<div className="mt-3 flex items-center gap-2 text-muted-foreground/60 text-xs">
-							<Sparkles className="size-3" />
-							<span>Explain with AI → coming soon</span>
+						<div className="mt-3 space-y-2">
+							{explainLoading ? (
+								<div className="flex animate-pulse items-center gap-2 font-mono text-[11px] text-accent opacity-50">
+									✦ Explaining...
+								</div>
+							) : explainError && !cachedExplanation ? (
+								<div className="space-y-1">
+									<div className="text-destructive text-xs">{explainError}</div>
+									<button
+										type="button"
+										onClick={handleExplain}
+										className="font-mono text-[11px] text-accent hover:underline"
+									>
+										↻ Retry
+									</button>
+								</div>
+							) : cachedExplanation ? (
+								<div className="space-y-1">
+									<div className="font-sans text-[#cccccc] text-xs">
+										{cachedExplanation}
+									</div>
+									<button
+										type="button"
+										onClick={handleExplain}
+										className="font-mono text-[11px] text-accent hover:underline"
+									>
+										↻ Re-explain
+									</button>
+								</div>
+							) : !aiAvailable ? (
+								<div className="flex items-center gap-2">
+									<span className="text-muted-foreground text-xs">
+										Add an AI provider in Settings to use AI features
+									</span>
+									<button
+										type="button"
+										onClick={openSettings}
+										className="font-mono text-[11px] text-accent hover:underline"
+									>
+										Open Settings →
+									</button>
+								</div>
+							) : (
+								<button
+									type="button"
+									onClick={handleExplain}
+									className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+								>
+									✦ Explain with AI
+								</button>
+							)}
 						</div>
+
+						{check === "missing_rls" && (
+							<div className="mt-2">
+								{!suggestExpanded ? (
+									<button
+										type="button"
+										onClick={() => setSuggestExpanded(true)}
+										className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+									>
+										✦ Suggest policy →
+									</button>
+								) : (
+									<div className="space-y-2 rounded border border-border/70 bg-card p-3">
+										{suggestLoading ? (
+											<div className="animate-pulse font-mono text-[11px] text-accent opacity-50">
+												✦ Generating...
+											</div>
+										) : suggestError && !suggestResult ? (
+											<div className="space-y-1">
+												<div className="text-destructive text-xs">
+													{suggestError}
+												</div>
+												<button
+													type="button"
+													onClick={handleSuggest}
+													className="font-mono text-[11px] text-accent hover:underline"
+												>
+													↻ Retry
+												</button>
+											</div>
+										) : suggestResult ? (
+											<div className="space-y-2">
+												<div className="font-mono text-accent text-xs">
+													{suggestResult.policyName}
+												</div>
+												<pre className="overflow-x-auto rounded border border-border bg-[#0a0a0a] p-2 font-mono text-[11px] leading-relaxed">
+													<code>{suggestResult.sql}</code>
+												</pre>
+												<div className="font-sans text-[#cccccc] text-xs">
+													{suggestResult.explanation}
+												</div>
+												<div className="flex gap-2">
+													<button
+														type="button"
+														onClick={handleCopySql}
+														className="rounded border border-border px-2 py-1 font-mono text-[11px] transition-colors hover:border-accent hover:text-accent"
+													>
+														{copied ? "✓ Copied" : "Copy SQL"}
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															setSuggestResult(null);
+															setSuggestInput("");
+														}}
+														className="font-mono text-[11px] text-muted-foreground hover:text-foreground"
+													>
+														Close
+													</button>
+												</div>
+											</div>
+										) : (
+											<>
+												<textarea
+													value={suggestInput}
+													onChange={(e) => setSuggestInput(e.target.value)}
+													placeholder="Users should only see their own records..."
+													rows={3}
+													className="w-full rounded border border-input bg-background px-2 py-1 text-xs"
+												/>
+												<div className="flex gap-2">
+													<button
+														type="button"
+														onClick={handleSuggest}
+														disabled={!suggestInput.trim()}
+														className="rounded bg-primary px-3 py-1 font-medium text-primary-foreground text-xs hover:bg-primary/90 disabled:opacity-50"
+													>
+														Generate →
+													</button>
+													<button
+														type="button"
+														onClick={() => setSuggestExpanded(false)}
+														className="rounded px-3 py-1 text-muted-foreground text-xs hover:text-foreground"
+													>
+														Cancel
+													</button>
+												</div>
+											</>
+										)}
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

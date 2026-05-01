@@ -5,7 +5,6 @@ import * as path from "node:path";
 export type Provider =
 	| "anthropic"
 	| "openai"
-	| "groq"
 	| "gemini"
 	| "mistral"
 	| "ollama"
@@ -95,7 +94,6 @@ export function isValidKey(provider: Provider, apiKey: string): boolean {
 			return true;
 		case "openai-compatible":
 			return apiKey.length > 10;
-		case "groq":
 		case "gemini":
 		case "mistral":
 			return apiKey.length > 20;
