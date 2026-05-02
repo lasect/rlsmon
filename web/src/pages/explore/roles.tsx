@@ -59,7 +59,8 @@ export function RolesPage() {
 			/>
 
 			<div className="flex flex-1 flex-col overflow-auto">
-				{selected ? (
+			{selected ? (
+				<div key={selected.name} className="animate-in slide-in-from-right duration-200 flex flex-1 flex-col overflow-auto">
 					<RoleDetail
 						role={selected}
 						allRoles={data}
@@ -69,6 +70,7 @@ export function RolesPage() {
 						policies={{ data: policiesData, isLoading: policiesLoading }}
 						onSelect={setSelectedName}
 					/>
+				</div>
 				) : (
 					<div className="flex flex-1 items-center justify-center">
 						<div className="text-center">

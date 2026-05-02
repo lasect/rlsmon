@@ -365,8 +365,8 @@ export function SimulatePage() {
 								Context
 							</p>
 							<div className="space-2.5">
-								{config.mode === "table" && (
-									<div className="space-1.5">
+							{config.mode === "table" && (
+								<div className="space-1.5">
 										<span className="text-[10px] text-text-muted">Role</span>
 										<Select
 											value={config.role}
@@ -515,7 +515,8 @@ export function SimulatePage() {
 				{config.mode === "row-access" &&
 					config.table &&
 					(!hasRun || !results?.canAccess) && (
-						<RowSelector
+						<div key="row-access-selector" className="animate-in slide-in-from-right duration-200 flex flex-1 flex-col overflow-hidden">
+							<RowSelector
 							tableName={config.table}
 							rows={tableRows}
 							columns={rowAccessQuery.data?.columns ?? []}
@@ -525,10 +526,11 @@ export function SimulatePage() {
 								setConfig((prev) => ({ ...prev, rowId }));
 							}}
 						/>
-					)}
+					</div>
+				)}
 
 				{hasRun && error && (
-					<div className="flex flex-1 items-center justify-center">
+					<div key="sim-error" className="animate-in slide-in-from-right duration-200 flex flex-1 items-center justify-center">
 						<div className="text-center">
 							<AlertTriangle className="mx-auto h-8 w-8 text-amber-500" />
 							<p className="mt-3 text-sm text-text">{error}</p>
@@ -540,7 +542,7 @@ export function SimulatePage() {
 					hasRun &&
 					results &&
 					results.rows.length > 0 && (
-						<div className="flex flex-1 flex-col overflow-hidden">
+						<div key="sim-table-results" className="animate-in slide-in-from-right duration-200 flex flex-1 flex-col overflow-hidden">
 							<div className="flex-shrink-0 border-border border-b bg-card px-4 py-3">
 								<h2 className="font-medium text-sm text-text">
 									Simulation Result
@@ -662,7 +664,7 @@ export function SimulatePage() {
 					hasRun &&
 					results &&
 					results.canAccess && (
-						<div className="flex flex-1 flex-col overflow-hidden">
+						<div key="sim-row-access-results" className="animate-in slide-in-from-right duration-200 flex flex-1 flex-col overflow-hidden">
 							<div className="flex-1 overflow-auto p-4">
 								<button
 									type="button"
@@ -823,7 +825,7 @@ export function SimulatePage() {
 					)}
 
 				{hasRun && results && results.rows.length === 0 && (
-					<div className="flex flex-1 items-center justify-center">
+					<div key="sim-empty" className="animate-in slide-in-from-right duration-200 flex flex-1 items-center justify-center">
 						<div className="text-center">
 							<AlertTriangle className="mx-auto h-8 w-8 text-amber-500" />
 							<p className="mt-3 font-medium text-sm text-text">

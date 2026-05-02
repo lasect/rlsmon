@@ -156,7 +156,7 @@ export function SettingsModal() {
 				aria-label="Close settings"
 			/>
 			<div className="absolute inset-0 flex items-start justify-center pt-[20vh]">
-				<div className="relative w-full max-w-md rounded-sm border border-[#2a2a2a] bg-[#111111] p-6 font-mono">
+				<div className="animate-in slide-in-from-right duration-200 relative w-full max-w-md rounded-sm border border-[#2a2a2a] bg-[#111111] p-6 font-mono">
 					<div className="mb-4 flex items-center justify-between">
 						<h2 className="font-semibold text-[#e8e8e8] text-sm">Settings</h2>
 						<button

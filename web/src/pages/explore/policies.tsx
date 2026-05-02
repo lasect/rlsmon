@@ -871,8 +871,8 @@ export function PoliciesPage() {
 							)}
 						</div>
 					</div>
-				) : selected ? (
-					<div className="p-4">
+			) : selected ? (
+				<div key={selected.name} className="animate-in slide-in-from-right duration-200 p-4">
 						<div className="mb-4">
 							<div className="mb-1 flex items-center gap-2">
 								<Shield className="size-4 text-muted-foreground" />
