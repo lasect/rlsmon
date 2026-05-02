@@ -38,33 +38,56 @@ Important: Only reference the table and column names provided above. Do not hall
 }
 
 export function suggestPolicyPrompt(input: {
-	table: string;
-	schema: string;
 	intent: string;
-	tableColumns: Array<{ name: string; type: string }>;
-	existingPolicies: string[];
+	schema?: string;
+	table?: string;
+	tableColumns?: Array<{ name: string; type: string }>;
+	existingPolicies?: string[];
 }): string {
-	return `You are a PostgreSQL Row Level Security expert. Generate an RLS policy based on the developer's intent.
+	let tableContext =
+		"No specific table provided — infer from intent or use placeholder.";
+	if (input.schema && input.table && input.tableColumns) {
+		const cols = input.tableColumns
+			.map((c) => `${c.name} (${c.type})`)
+			.join(", ");
+		const existing =
+			input.existingPolicies && input.existingPolicies.length > 0
+				? `\nExisting policies on this table: ${input.existingPolicies.join(", ")}`
+				: "";
+		tableContext = `Table: ${input.schema}.${input.table}\nColumns: ${cols}${existing}`;
+	}
 
-Table: ${input.schema}.${input.table}
-Available columns: ${input.tableColumns.map((c) => `${c.name} (${c.type})`).join(", ")}
-Existing policies on this table: ${input.existingPolicies.length > 0 ? input.existingPolicies.join(", ") : "none"}
+	return `You are a PostgreSQL Row Level Security expert. Generate a complete RLS policy based on the developer's description.
 
 Developer's intent: ${input.intent}
 
-Respond with ONLY a JSON object in this exact format, no markdown, no explanation outside the JSON:
+${tableContext}
+
+Respond with ONLY a JSON object, no markdown, no text outside JSON:
 {
-  "policyName": "snake_case_name",
+  "policyName": "descriptive_snake_case_name",
+  "schema": "public",
+  "table": "table_name",
   "command": "SELECT | INSERT | UPDATE | DELETE | ALL",
   "permissive": "PERMISSIVE | RESTRICTIVE",
   "roles": ["role_name"] or [],
   "using": "SQL expression or null",
   "withCheck": "SQL expression or null",
-  "sql": "Complete CREATE POLICY statement",
-  "explanation": "One sentence explaining what this policy does"
+  "sql": "Complete CREATE POLICY statement ready to run",
+  "explanation": "One sentence: what this policy does and why",
+  "warnings": []
 }
 
-Important: Only use column names from the list above. Do not hallucinate.`;
+If the intent mentions a specific table, use it. If not, infer a reasonable table name from context or use 'your_table_name' as placeholder.
+
+Common RLS patterns to know:
+- User owns row: user_id = auth.uid() or user_id = current_setting('app.user_id')::uuid
+- Tenant isolation: tenant_id = current_setting('app.tenant_id')::uuid
+- JWT claims: (auth.jwt() ->> 'role') = 'admin'
+- Public read: true
+- Owner write: user_id = current_setting('app.user_id')::uuid
+
+Important: Generate syntactically correct PostgreSQL. Do not hallucinate function names. Only use standard PostgreSQL functions and common RLS patterns. Only use column names from the list above if provided.`;
 }
 
 export function auditSummaryPrompt(

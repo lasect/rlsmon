@@ -1,4 +1,12 @@
-import { Edit2, MessageSquare, Shield, Trash2, Users } from "lucide-react";
+import {
+	Copy,
+	Edit2,
+	MessageSquare,
+	Play,
+	Shield,
+	Trash2,
+	Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { trpc } from "@/api/trpc";
@@ -268,6 +276,29 @@ export function PoliciesPage() {
 
 	const { available: aiAvailable, openSettings } = useAiAvailable();
 	const explainMutation = trpc.ai.explain.useMutation();
+	const suggestMutation = trpc.ai.suggest.useMutation();
+	const applyPolicyMutation = trpc.ai.applyPolicy.useMutation();
+
+	const [showGenerator, setShowGenerator] = useState(false);
+	const [generatorIntent, setGeneratorIntent] = useState("");
+	const [generatorResult, setGeneratorResult] = useState<{
+		policyName: string;
+		schema: string;
+		table: string;
+		command: string;
+		permissive: string;
+		roles: string[];
+		using: string | null;
+		withCheck: string | null;
+		sql: string;
+		explanation: string;
+		warnings: string[];
+	} | null>(null);
+	const [generatorError, setGeneratorError] = useState<string | null>(null);
+	const [showConfirm, setShowConfirm] = useState(false);
+	const [copiedSql, setCopiedSql] = useState(false);
+	const [applySuccess, setApplySuccess] = useState(false);
+	const [applyError, setApplyError] = useState<string | null>(null);
 
 	const [searchParams] = useSearchParams();
 
@@ -432,31 +463,45 @@ export function PoliciesPage() {
 		<div className="flex h-full">
 			<div className="flex w-80 flex-shrink-0 flex-col border-border border-r">
 				<div className="flex-shrink-0 px-3 pt-3 pb-2">
-					<div className="mb-2">
-						<h1 className="font-semibold text-sm">Policies</h1>
-						<p className="text-[11px] text-muted-foreground">
-							{filtered.length} polic{filtered.length !== 1 ? "ies" : "y"}
-							{annotatedCount > 0 && (
-								<span>
-									{" · "}
-									{annotatedCount} annotated
+					<div className="mb-3">
+						<div className="flex items-center justify-between">
+							<div>
+								<h1 className="text-sm font-semibold text-[#e8e8e8]">Policies</h1>
+								<p className="mt-0.5 font-mono text-[10px] text-[#666666]">
+									{filtered.length} polic{filtered.length !== 1 ? "ies" : "y"}
 									{needsAttentionCount > 0 && (
-										<span className="text-amber-500">
+										<>
 											{" · "}
-											{needsAttentionCount} need
-											{needsAttentionCount !== 1 && "s"} attention
-										</span>
+											<span style={{ color: "#ffaa00" }}>
+												{needsAttentionCount} need{needsAttentionCount !== 1 && "s"} attention
+											</span>
+										</>
 									)}
-								</span>
-							)}
-						</p>
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									setShowGenerator(true);
+									setGeneratorResult(null);
+									setGeneratorError(null);
+									setShowConfirm(false);
+									setApplySuccess(false);
+									setApplyError(null);
+								}}
+								className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm bg-[#00c27a] px-3 py-1 font-mono text-[11px] font-semibold text-black transition-colors hover:bg-[#00a866]"
+							>
+								<Play className="size-3" />
+								Generate
+							</button>
+						</div>
 					</div>
-					<FilterBar
+					<FilterBar className="mb-3"
 						search={search}
 						onSearchChange={setSearch}
 						placeholder="Search policies..."
 					/>
-					<div className="mt-2 flex flex-wrap gap-1">
+					<div className="flex flex-wrap gap-1">
 						{(
 							[
 								{ key: "all", label: "All" },
@@ -495,7 +540,10 @@ export function PoliciesPage() {
 									<button
 										key={policy.name}
 										type="button"
-										onClick={() => setSelectedName(policy.name)}
+										onClick={() => {
+											setSelectedName(policy.name);
+											setShowGenerator(false);
+										}}
 										className={cn(
 											"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
 											selectedName === policy.name
@@ -537,8 +585,293 @@ export function PoliciesPage() {
 				</div>
 			</div>
 
-			<div className="flex flex-1 flex-col overflow-auto">
-				{selected ? (
+			<div className="relative flex flex-1 flex-col overflow-auto">
+				{showGenerator ? (
+					<div className="slide-in-from-right flex h-full animate-in flex-col border-[#222222] border-l bg-[#111111] duration-200">
+						<div className="flex items-center justify-between border-[#222222] border-b px-6 py-4">
+							<div>
+								<div className="font-mono font-semibold text-[#e8e8e8] text-sm">
+									Generate Policy
+								</div>
+								<div className="mt-0.5 font-mono text-[#666666] text-[10px]">
+									Describe what you want in plain English
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowGenerator(false)}
+								className="text-[#666666] text-lg leading-none hover:text-[#cccccc]"
+							>
+								×
+							</button>
+						</div>
+
+						<div className="flex-1 overflow-y-auto px-6 py-4">
+							<div className="space-y-1.5">
+								<label
+									htmlFor="generator-intent"
+									className="mb-2 block font-mono text-[#666666] text-[10px] uppercase tracking-widest"
+								>
+									Describe Your Policy
+								</label>
+								<textarea
+									id="generator-intent"
+									value={generatorIntent}
+									onChange={(e) => setGeneratorIntent(e.target.value)}
+									placeholder="e.g. Users should only see their own records, matched by user_id"
+									className="w-full resize-none rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs leading-relaxed focus:border-accent focus:outline-none"
+									rows={3}
+								/>
+
+								<div className="mt-2 flex items-center gap-2">
+									<span className="font-mono text-[#444444] text-[10px]">
+										Try:
+									</span>
+									{[
+										{
+											label: "users see own rows",
+											prompt:
+												"Users should only be able to see their own records. Match rows where user_id equals the current user's ID from JWT claims.",
+										},
+										{
+											label: "admins can read all",
+											prompt:
+												"Admin users with role='admin' in their JWT token should be able to read all records in the table.",
+										},
+										{
+											label: "tenant isolation by org_id",
+											prompt:
+												"Users should only see records that belong to their organization. Match rows where org_id equals the tenant ID stored in the app.tenant_id session setting.",
+										},
+									].map((example) => (
+										<button
+											key={example.label}
+											type="button"
+											onClick={() => setGeneratorIntent(example.prompt)}
+											className="cursor-pointer rounded-sm border border-[#333333] bg-[#161616] px-2 py-1 font-mono text-[#666666] text-[10px] transition-colors hover:border-[#555555] hover:text-[#cccccc]"
+										>
+											{example.label}
+										</button>
+									))}
+								</div>
+							</div>
+
+							{aiAvailable ? (
+								<button
+									type="button"
+									onClick={async () => {
+										if (!generatorIntent.trim()) return;
+										setGeneratorError(null);
+										setGeneratorResult(null);
+										setShowConfirm(false);
+										setApplySuccess(false);
+										setApplyError(null);
+										try {
+											const result = await suggestMutation.mutateAsync({
+												intent: generatorIntent.trim(),
+											});
+											if ("error" in result) {
+												setGeneratorError(
+													(result as { message?: string }).message ??
+														"Generation failed",
+												);
+											} else if ("policy" in result) {
+												setGeneratorResult(result.policy);
+											}
+										} catch (e) {
+											setGeneratorError(
+												e instanceof Error ? e.message : "Unknown error",
+											);
+										}
+									}}
+									disabled={
+										!generatorIntent.trim() || suggestMutation.isPending
+									}
+									className="mt-4 w-fit rounded-sm px-4 py-2 font-mono font-semibold text-black text-xs transition-opacity disabled:opacity-50"
+									style={{ backgroundColor: "#00c27a" }}
+								>
+									{suggestMutation.isPending ? (
+										<span className="animate-pulse">Generating...</span>
+									) : (
+										"Generate"
+									)}
+								</button>
+							) : (
+								<div className="mt-4 py-3 text-center">
+									<div className="font-mono text-[#666666] text-[10px]">
+										Add your Anthropic API key in Settings to use AI features
+									</div>
+									<button
+										type="button"
+										onClick={openSettings}
+										className="cursor-pointer font-mono text-[11px] text-accent hover:underline"
+									>
+										Open Settings →
+									</button>
+								</div>
+							)}
+
+							{generatorError && (
+								<div className="mt-3 font-mono text-[11px] text-destructive">
+									{generatorError}
+								</div>
+							)}
+
+							{suggestMutation.isPending && (
+								<div className="mt-3 animate-pulse font-mono text-[11px] text-accent opacity-50">
+									Generating policy...
+								</div>
+							)}
+
+							{generatorResult && (
+								<div className="mt-4 border-[#1e1e1e] border-t pt-4">
+									<div className="mb-1 font-mono text-accent text-xs">
+										{generatorResult.policyName}
+									</div>
+									<div className="mb-3 text-[#666666] text-[10px]">
+										for {generatorResult.schema}.{generatorResult.table} ·{" "}
+										{generatorResult.command} · {generatorResult.permissive}
+									</div>
+
+									<div className="mb-3 font-sans text-[#aaaaaa] text-xs leading-relaxed">
+										{generatorResult.explanation}
+									</div>
+
+									{generatorResult.warnings.length > 0 && (
+										<div className="mb-3 space-y-1">
+											{generatorResult.warnings.map((w) => (
+												<div
+													key={w}
+													className="font-mono text-[#ffaa00] text-[10px]"
+												>
+													⚠ {w}
+												</div>
+											))}
+										</div>
+									)}
+
+									<pre className="mb-3 overflow-x-auto whitespace-pre-wrap rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] p-3 font-mono text-[#e8e8e8] text-[11px]">
+										{generatorResult.sql}
+									</pre>
+
+									{!showConfirm ? (
+										<div className="flex gap-2">
+											<button
+												type="button"
+												onClick={async () => {
+													await navigator.clipboard.writeText(
+														generatorResult.sql,
+													);
+													setCopiedSql(true);
+													setTimeout(() => setCopiedSql(false), 1500);
+												}}
+												className="flex items-center gap-1.5 rounded-sm border border-[#2a2a2a] px-3 py-1.5 font-mono text-[#888888] text-[11px] transition-colors hover:text-[#cccccc]"
+											>
+												<Copy className="h-3 w-3" />
+												{copiedSql ? "✓ Copied" : "Copy SQL"}
+											</button>
+											<button
+												type="button"
+												onClick={() => setShowConfirm(true)}
+												className="flex items-center gap-1.5 rounded-sm px-3 py-1.5 font-mono font-semibold text-[11px] text-black"
+												style={{
+													backgroundColor: "#00c27a",
+												}}
+											>
+												<Play className="h-3 w-3 fill-current" />
+												Apply to database
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													setGeneratorResult(null);
+													setShowConfirm(false);
+													setApplySuccess(false);
+													setApplyError(null);
+												}}
+												className="cursor-pointer font-mono text-[#555555] text-[10px] hover:text-accent"
+											>
+												↻ Regenerate
+											</button>
+										</div>
+									) : (
+										<div className="rounded-sm border border-[#ff4444]/30 bg-[#1a0a0a] p-3">
+											<div className="mb-2 font-mono text-[#ff4444] text-[10px]">
+												⚠ This will execute the following SQL on your database:
+											</div>
+											<pre className="mb-3 overflow-x-auto whitespace-pre-wrap rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] p-2 font-mono text-[#e8e8e8] text-[10px]">
+												{generatorResult.sql}
+											</pre>
+											<div className="flex gap-2">
+												<button
+													type="button"
+													onClick={async () => {
+														setApplyError(null);
+														try {
+															const result =
+																await applyPolicyMutation.mutateAsync({
+																	sql: generatorResult.sql,
+																});
+															if (result && "error" in result) {
+																setApplyError(
+																	(result as { message?: string }).message ??
+																		"Failed to apply policy",
+																);
+															} else {
+																setApplySuccess(true);
+															}
+														} catch (e) {
+															setApplyError(
+																e instanceof Error
+																	? e.message
+																	: "Unknown error",
+															);
+														}
+													}}
+													disabled={applyPolicyMutation.isPending}
+													className="rounded-sm border border-[#ff4444]/40 bg-[#ff4444]/20 px-3 py-1.5 font-mono text-[#ff4444] text-[11px] disabled:opacity-50"
+												>
+													{applyPolicyMutation.isPending
+														? "Applying..."
+														: "Confirm & Apply"}
+												</button>
+												<button
+													type="button"
+													onClick={() => setShowConfirm(false)}
+													className="px-3 py-1.5 font-mono text-[#666666] text-[11px] hover:text-[#999999]"
+												>
+													Cancel
+												</button>
+											</div>
+											{applyError && (
+												<div className="mt-2 font-mono text-[#ff4444] text-[11px]">
+													{applyError}
+												</div>
+											)}
+											{applySuccess && (
+												<div className="mt-2 font-mono text-[11px] text-accent">
+													✓ Policy created successfully
+													<button
+														type="button"
+														onClick={() => {
+															refetch();
+															setApplySuccess(false);
+															setShowConfirm(false);
+															setShowGenerator(false);
+														}}
+														className="ml-1 hover:underline"
+													>
+														Refresh policies
+													</button>
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+							)}
+						</div>
+					</div>
+				) : selected ? (
 					<div className="p-4">
 						<div className="mb-4">
 							<div className="mb-1 flex items-center gap-2">
@@ -743,10 +1076,24 @@ export function PoliciesPage() {
 				) : (
 					<div className="flex flex-1 items-center justify-center">
 						<div className="text-center">
-							<Shield className="mx-auto mb-2 size-8 text-muted-foreground/30" />
-							<div className="text-muted-foreground text-xs">
+							<Shield className="mx-auto mb-3 h-8 w-8 text-[#2a2a2a]" />
+							<div className="font-mono text-[#444444] text-sm">
 								Select a policy to inspect
 							</div>
+							<button
+								type="button"
+								onClick={() => {
+									setShowGenerator(true);
+									setGeneratorResult(null);
+									setGeneratorError(null);
+									setShowConfirm(false);
+									setApplySuccess(false);
+									setApplyError(null);
+								}}
+								className="mt-1 cursor-pointer font-mono text-[#333333] text-[10px] hover:text-[#666666]"
+							>
+								or generate a new one
+							</button>
 						</div>
 					</div>
 				)}

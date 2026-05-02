@@ -10,6 +10,8 @@ import { publicProcedure, router } from "../trpc";
 
 interface SuggestedPolicy {
 	policyName: string;
+	schema: string;
+	table: string;
 	command: string;
 	permissive: string;
 	roles: string[];
@@ -17,6 +19,7 @@ interface SuggestedPolicy {
 	withCheck: string | null;
 	sql: string;
 	explanation: string;
+	warnings: string[];
 }
 
 export const aiRouter = router({
@@ -76,40 +79,43 @@ export const aiRouter = router({
 	suggest: publicProcedure
 		.input(
 			z.object({
-				schema: z.string(),
-				table: z.string(),
 				intent: z.string(),
+				schema: z.string().optional(),
+				table: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
 			try {
-				// Fetch columns from information_schema
-				const columnRows = await catalogSql`
-					SELECT column_name as name, data_type as type
-					FROM information_schema.columns
-					WHERE table_schema = ${input.schema} AND table_name = ${input.table}
-					ORDER BY ordinal_position
-				`;
-				const tableColumns = columnRows.map((row: Record<string, unknown>) => ({
-					name: row.name as string,
-					type: row.type as string,
-				}));
+				let tableColumns: Array<{ name: string; type: string }> | undefined;
+				let existingPolicies: string[] | undefined;
 
-				// Fetch existing policies from pg_policies
-				const policyRows = await catalogSql`
-					SELECT policyname as name
-					FROM pg_policies
-					WHERE schemaname = ${input.schema} AND tablename = ${input.table}
-				`;
-				const existingPolicies = policyRows.map(
-					(row: Record<string, unknown>) => row.name as string,
-				);
+				if (input.schema && input.table) {
+					const columnRows = await catalogSql`
+						SELECT column_name as name, data_type as type
+						FROM information_schema.columns
+						WHERE table_schema = ${input.schema} AND table_name = ${input.table}
+						ORDER BY ordinal_position
+					`;
+					tableColumns = columnRows.map((row: Record<string, unknown>) => ({
+						name: row.name as string,
+						type: row.type as string,
+					}));
+
+					const policyRows = await catalogSql`
+						SELECT policyname as name
+						FROM pg_policies
+						WHERE schemaname = ${input.schema} AND tablename = ${input.table}
+					`;
+					existingPolicies = policyRows.map(
+						(row: Record<string, unknown>) => row.name as string,
+					);
+				}
 
 				// AI prompt contains schema only — no row data per AGENTS.md
 				const prompt = suggestPolicyPrompt({
-					table: input.table,
-					schema: input.schema,
 					intent: input.intent,
+					schema: input.schema,
+					table: input.table,
 					tableColumns,
 					existingPolicies,
 				});
@@ -141,6 +147,37 @@ export const aiRouter = router({
 					return { error: "no_provider" };
 				}
 				return { error: "api_error", message };
+			}
+		}),
+
+	// Executes user-provided CREATE POLICY SQL — schema write operation
+	// No row data involved
+	applyPolicy: publicProcedure
+		.input(
+			z.object({
+				sql: z.string(),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			const trimmed = input.sql.trim();
+			if (!trimmed.toLowerCase().startsWith("create policy")) {
+				throw new Error(
+					"Only CREATE POLICY statements are allowed. Your SQL must start with CREATE POLICY.",
+				);
+			}
+			const noTrailing = trimmed.replace(/;\s*$/, "");
+			if (noTrailing.includes(";")) {
+				throw new Error(
+					"Multiple SQL statements are not allowed. Provide only a single CREATE POLICY statement.",
+				);
+			}
+
+			try {
+				await catalogSql.unsafe(trimmed);
+				return { success: true, message: "Policy created" };
+			} catch (e) {
+				const message = e instanceof Error ? e.message : "Unknown error";
+				return { error: "exec_error", message };
 			}
 		}),
 

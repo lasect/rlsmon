@@ -58,22 +58,49 @@ rlsmon/
 
 ## API Routes
 
-All routes are `Content-Type: application/json`. All routes return `{ error: string }` on failure.
+The API uses tRPC (mounted at `/trpc/*`) with two direct Hono routes for health and snapshot rename. All routes return `{ error: string }` on failure.
+
+### Direct routes
 
 | Method | Route | Description |
 |--------|-------|-------------|
 | GET | `/api/health` | Connection status, pg version |
-| GET | `/api/meta` | Bootstrap payload: all tables, roles, policies |
-| GET | `/api/matrix` | Computed access matrix |
-| GET | `/api/policies` | All policies from pg_policies |
-| GET | `/api/roles` | All roles + inheritance |
-| POST | `/api/simulate` | Accepts role + jwt claims, returns filtered rows |
-| POST | `/api/audit` | Runs full linter ruleset, returns findings |
-| POST | `/api/ai/explain` | Accepts policy SQL, returns plain-english explanation |
-| POST | `/api/ai/suggest` | Accepts natural language + table schema, returns policy SQL |
-| GET | `/api/snapshots` | List saved snapshots |
-| POST | `/api/snapshots` | Save a new snapshot |
-| GET | `/api/snapshots/diff` | Diff two snapshots by id |
+| POST | `/api/snapshots/rename` | Rename a snapshot |
+
+### tRPC routers
+
+| Router | Procedure | Method | Description |
+|--------|-----------|--------|-------------|
+| `health` | `check` | GET | Connection status, pg version |
+| `meta` | `get` | GET | Bootstrap payload: all tables, roles, policies |
+| `matrix` | `get` | GET | Computed access matrix |
+| `policies` | `list` | GET | All policies from pg_policies |
+| `policies` | `getByTable` | GET | Policies for a specific table |
+| `roles` | `list` | GET | All roles + inheritance |
+| `roles` | `get` | GET | Single role detail |
+| `simulate` | `select` | POST | Accepts role + jwt claims, returns filtered rows |
+| `audit` | `run` | POST | Runs full linter ruleset, returns findings |
+| `audit` | `coverage` | GET | RLS coverage stats per table |
+| `ai` | `explain` | POST | Accepts policy SQL, returns plain-English explanation |
+| `ai` | `suggest` | POST | Accepts natural language + table schema, returns policy SQL |
+| `ai` | `summarize` | POST | Natural language summary of audit findings |
+| `snapshots` | `list` | GET | List saved snapshots |
+| `snapshots` | `get` | GET | Get a single snapshot |
+| `snapshots` | `create` | POST | Save a new snapshot |
+| `snapshots` | `delete` | POST | Delete a snapshot |
+| `snapshots` | `rename` | POST | Rename a snapshot |
+| `snapshots` | `diff` | GET | Diff two snapshots by id |
+| `rowAccess` | `getRows` | GET | Get rows for a table |
+| `rowAccess` | `checkAccess` | POST | Check row-level access for a role |
+| `migrationCheck` | `check` | POST | Validate migration DDL against existing policies |
+| `migrationCheck` | `parse` | POST | Parse migration DDL into statements |
+| `annotations` | `list` | GET | List all annotations |
+| `annotations` | `get` | GET | Get annotation for a key |
+| `annotations` | `set` | POST | Set annotation for a key |
+| `annotations` | `delete` | POST | Delete an annotation |
+| `settings` | `get` | GET | Get current settings |
+| `settings` | `setProviderKey` | POST | Set API key for a provider |
+| `settings` | `setActiveProvider` | POST | Set active AI provider |
 
 ---
 
@@ -84,14 +111,12 @@ All routes are `Content-Type: application/json`. All routes return `{ error: str
 | `/` | Redirects to `/audit` |
 | `/explore/policies` | Policy explorer |
 | `/explore/roles` | Role explorer |
-| `/explore/row-access` | Effective permissions explorer |
 | `/simulate` | Persona simulation |
 | `/audit` | Audit overview |
 | `/audit/ci` | CI mode config + output preview |
 | `/ai` | AI tools (explain, suggest, summary) |
 | `/history` | Snapshots list |
 | `/history/:snapshotId` | Single snapshot detail |
-| `/history/diff` | Diff viewer |
 | `/settings` | Connection info, API key, pro license |
 
 ---
