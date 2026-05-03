@@ -40,7 +40,7 @@ function TooltipContent({
 				data-slot="tooltip-content"
 				sideOffset={sideOffset}
 				className={cn(
-					"data-[state=delayed-open]:animate-in data-[state=delayed-open]:slide-in-from-right data-[state=delayed-open]:duration-200 data-open:animate-in data-open:slide-in-from-right data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-right data-closed:duration-200 z-50 inline-flex w-fit max-w-xs origin-(--radix-tooltip-content-transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-background text-xs has-data-[slot=kbd]:pr-1.5 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm",
+					"data-[state=delayed-open]:slide-in-from-right data-open:slide-in-from-right data-closed:slide-out-to-right z-50 inline-flex w-fit max-w-xs origin-(--radix-tooltip-content-transform-origin) items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-background text-xs has-data-[slot=kbd]:pr-1.5 data-[state=delayed-open]:animate-in data-closed:animate-out data-open:animate-in data-[state=delayed-open]:duration-200 data-closed:duration-200 data-open:duration-200 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm",
 					className,
 				)}
 				{...props}

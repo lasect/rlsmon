@@ -156,7 +156,7 @@ export function SettingsModal() {
 				aria-label="Close settings"
 			/>
 			<div className="absolute inset-0 flex items-start justify-center pt-[20vh]">
-				<div className="animate-in slide-in-from-right duration-200 relative w-full max-w-md rounded-sm border border-[#2a2a2a] bg-[#111111] p-6 font-mono">
+				<div className="slide-in-from-right relative w-full max-w-md animate-in rounded-sm border border-[#2a2a2a] bg-[#111111] p-6 font-mono duration-200">
 					<div className="mb-4 flex items-center justify-between">
 						<h2 className="font-semibold text-[#e8e8e8] text-sm">Settings</h2>
 						<button
@@ -209,38 +209,38 @@ export function SettingsModal() {
 						)}
 
 						{(isEditing || !hasKey) && (
-								<div className="space-y-2">
-									{needsApiKey && (
-										<input
-											type="password"
-											value={apiKey}
-											onChange={(e) => setApiKey(e.target.value)}
-											placeholder={
-												PLACEHOLDERS[selectedProvider] ?? "Enter API key..."
-											}
-											className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
-										/>
-									)}
+							<div className="space-y-2">
+								{needsApiKey && (
 									<input
-										type="text"
-										value={model}
-										onChange={(e) => setModel(e.target.value)}
+										type="password"
+										value={apiKey}
+										onChange={(e) => setApiKey(e.target.value)}
 										placeholder={
-											DEFAULT_MODELS[selectedProvider]
-												? `Default: ${DEFAULT_MODELS[selectedProvider]}`
-												: "Model..."
+											PLACEHOLDERS[selectedProvider] ?? "Enter API key..."
 										}
 										className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
 									/>
-									{needsBaseUrl && (
-										<input
-											type="text"
-											value={baseUrl}
-											onChange={(e) => setBaseUrl(e.target.value)}
-											placeholder={PLACEHOLDERS.ollama}
-											className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
-										/>
-									)}
+								)}
+								<input
+									type="text"
+									value={model}
+									onChange={(e) => setModel(e.target.value)}
+									placeholder={
+										DEFAULT_MODELS[selectedProvider]
+											? `Default: ${DEFAULT_MODELS[selectedProvider]}`
+											: "Model..."
+									}
+									className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
+								/>
+								{needsBaseUrl && (
+									<input
+										type="text"
+										value={baseUrl}
+										onChange={(e) => setBaseUrl(e.target.value)}
+										placeholder={PLACEHOLDERS.ollama}
+										className="w-full rounded-sm border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 font-mono text-[#e8e8e8] text-xs focus:border-accent focus:outline-none"
+									/>
+								)}
 								<button
 									type="button"
 									onClick={handleSave}

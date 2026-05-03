@@ -59,18 +59,21 @@ export function RolesPage() {
 			/>
 
 			<div className="flex flex-1 flex-col overflow-auto">
-			{selected ? (
-				<div key={selected.name} className="animate-in slide-in-from-right duration-200 flex flex-1 flex-col overflow-auto">
-					<RoleDetail
-						role={selected}
-						allRoles={data}
-						activeTab={activeTab}
-						onTabChange={setActiveTab}
-						matrix={{ data: matrixData, isLoading: matrixLoading }}
-						policies={{ data: policiesData, isLoading: policiesLoading }}
-						onSelect={setSelectedName}
-					/>
-				</div>
+				{selected ? (
+					<div
+						key={selected.name}
+						className="slide-in-from-right flex flex-1 animate-in flex-col overflow-auto duration-200"
+					>
+						<RoleDetail
+							role={selected}
+							allRoles={data}
+							activeTab={activeTab}
+							onTabChange={setActiveTab}
+							matrix={{ data: matrixData, isLoading: matrixLoading }}
+							policies={{ data: policiesData, isLoading: policiesLoading }}
+							onSelect={setSelectedName}
+						/>
+					</div>
 				) : (
 					<div className="flex flex-1 items-center justify-center">
 						<div className="text-center">

@@ -82,9 +82,15 @@ app.get("/*", (c, next) => {
 	return c.html(indexHtml);
 });
 
-console.log("RLSMon is up and running on http://localhost:2711");
+const port = Number.parseInt(process.env.PORT || "2711", 10);
 
-// Handle graceful shutdown
+const server = Bun.serve({
+	port,
+	fetch: app.fetch,
+});
+
+console.log(`RLSMon is up and running on http://localhost:${server.port}`);
+
 process.on("SIGINT", async () => {
 	console.log("\nShutting down...");
 	await closeConnections();
@@ -95,8 +101,3 @@ process.on("SIGTERM", async () => {
 	await closeConnections();
 	process.exit(0);
 });
-
-export default {
-	port: 2711,
-	fetch: app.fetch,
-};

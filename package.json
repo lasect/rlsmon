@@ -3,7 +3,7 @@
 	"version": "0.0.6",
 	"type": "module",
 	"bin": {
-		"rlsmon": "./dist/index.js"
+		"rlsmon": "./dist/cli.js"
 	},
 	"files": [
 		"dist"
@@ -13,8 +13,8 @@
 		"dev:web": "vite web",
 		"dev": "concurrently \"bun run dev:server\" \"bun run dev:web\"",
 		"build:web": "vite build web",
-		"build:server": "bun build src/index.ts --outfile dist/index.js --target bun",
-		"build": "bun run build:web && bun run build:server && bun scripts/add-shebang.ts",
+		"build:server": "bun build src/cli.ts --outfile dist/cli.js --target bun",
+		"build": "bun run build:web && bun run build:server",
 		"check": "biome check --write .",
 		"start": "bun run src/index.ts"
 	},

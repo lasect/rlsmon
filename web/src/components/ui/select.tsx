@@ -67,7 +67,7 @@ function SelectContent({
 				data-slot="select-content"
 				data-align-trigger={position === "item-aligned"}
 				className={cn(
-					"data-closed:animate-out data-closed:slide-out-to-right data-closed:duration-200 data-open:animate-in data-open:slide-in-from-right data-open:duration-200 relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-y-auto overflow-x-hidden rounded-sm border border-border bg-surface-overlay text-text shadow-md",
+					"data-closed:slide-out-to-right data-open:slide-in-from-right relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-y-auto overflow-x-hidden rounded-sm border border-border bg-surface-overlay text-text shadow-md data-closed:animate-out data-open:animate-in data-closed:duration-200 data-open:duration-200",
 					position === "popper" &&
 						"data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
 					className,

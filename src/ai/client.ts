@@ -66,10 +66,7 @@ export function getAIClient(): { generate: GenerateFn } {
 	}
 }
 
-function fetchWithTimeout(
-	url: string,
-	init: RequestInit,
-): Promise<Response> {
+function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
 	const controller = new AbortController();
 	const id = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 	return fetch(url, { ...init, signal: controller.signal }).finally(() =>
@@ -140,9 +137,7 @@ function createOpenAIClient(
 			});
 			if (!response.ok) {
 				const text = await response.text();
-				throw new Error(
-					`HTTP ${response.status}: ${text.slice(0, 500)}`,
-				);
+				throw new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
 			}
 			const data = (await response.json()) as {
 				choices: Array<{ message: { content: string | null } }>;
@@ -184,9 +179,7 @@ function createGeminiClient(
 			});
 			if (!response.ok) {
 				const text = await response.text();
-				throw new Error(
-					`HTTP ${response.status}: ${text.slice(0, 500)}`,
-				);
+				throw new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
 			}
 			const data = (await response.json()) as {
 				candidates: Array<{
@@ -225,9 +218,7 @@ function createOllamaClient(
 			});
 			if (!response.ok) {
 				const text = await response.text();
-				throw new Error(
-					`HTTP ${response.status}: ${text.slice(0, 500)}`,
-				);
+				throw new Error(`HTTP ${response.status}: ${text.slice(0, 500)}`);
 			}
 			const data = (await response.json()) as {
 				response: string;

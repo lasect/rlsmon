@@ -39,7 +39,7 @@ function DropdownMenuContent({
 				data-slot="dropdown-menu-content"
 				sideOffset={sideOffset}
 				className={cn(
-					"data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=open]:duration-200 z-50 min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+					"data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right z-50 min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-200",
 					className,
 				)}
 				{...props}
@@ -234,7 +234,7 @@ function DropdownMenuSubContent({
 		<DropdownMenuPrimitive.SubContent
 			data-slot="dropdown-menu-sub-content"
 			className={cn(
-				"data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=open]:duration-200 z-50 min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md",
+				"data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right z-50 min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=open]:duration-200",
 				className,
 			)}
 			{...props}

@@ -20,7 +20,6 @@ import {
 	type AuditResult,
 	type AuditSeverity,
 	formatRelativeTime,
-	loadStoredAuditResults,
 	saveStoredAuditResults,
 } from "@/lib/audit";
 import { cn } from "@/lib/utils";
@@ -84,9 +83,7 @@ function gradeStyles(grade: "A" | "B" | "C" | "D" | "F") {
 
 export function AuditPage() {
 	const navigate = useNavigate();
-	const [result, setResult] = useState<AuditResult | null>(() =>
-		loadStoredAuditResults(),
-	);
+	const [result, setResult] = useState<AuditResult | null>(null);
 	const [activeTab, setActiveTab] = useState<"overview" | "migration">(
 		"overview",
 	);
@@ -103,13 +100,16 @@ export function AuditPage() {
 		data: coverageData,
 		isLoading: coverageLoading,
 		error: coverageError,
-	} = trpc.audit.coverage.useQuery();
+		refetch: refetchCoverage,
+	} = trpc.audit.coverage.useQuery(undefined, { enabled: false });
+
 	const auditMutation = trpc.audit.run.useMutation({
 		onSuccess: (data) => {
 			setResult(data);
 			setExpandedChecks(new Set());
 			saveStoredAuditResults(data);
 			setSummary(null);
+			refetchCoverage();
 		},
 	});
 	const summarizeMutation = trpc.ai.summarize.useMutation();
@@ -982,16 +982,16 @@ function CheckFindingsRow({
 													className="w-full rounded border border-input bg-background px-2 py-1 text-xs"
 												/>
 												<div className="flex gap-2">
-											<button
-												type="button"
-												onClick={handleSuggest}
-												disabled={!suggestInput.trim()}
-												className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
-											>
-												<span className="font-mono font-semibold text-[11px] text-emerald-50">
-													Generate →
-												</span>
-											</button>
+													<button
+														type="button"
+														onClick={handleSuggest}
+														disabled={!suggestInput.trim()}
+														className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700/90 px-3 py-1.5 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
+													>
+														<span className="font-mono font-semibold text-[11px] text-emerald-50">
+															Generate →
+														</span>
+													</button>
 													<button
 														type="button"
 														onClick={() => setSuggestExpanded(false)}

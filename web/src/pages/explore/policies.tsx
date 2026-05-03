@@ -466,14 +466,17 @@ export function PoliciesPage() {
 					<div className="mb-3">
 						<div className="flex items-center justify-between">
 							<div>
-								<h1 className="text-sm font-semibold text-[#e8e8e8]">Policies</h1>
-								<p className="mt-0.5 font-mono text-[10px] text-[#666666]">
+								<h1 className="font-semibold text-[#e8e8e8] text-sm">
+									Policies
+								</h1>
+								<p className="mt-0.5 font-mono text-[#666666] text-[10px]">
 									{filtered.length} polic{filtered.length !== 1 ? "ies" : "y"}
 									{needsAttentionCount > 0 && (
 										<>
 											{" · "}
 											<span style={{ color: "#ffaa00" }}>
-												{needsAttentionCount} need{needsAttentionCount !== 1 && "s"} attention
+												{needsAttentionCount} need
+												{needsAttentionCount !== 1 && "s"} attention
 											</span>
 										</>
 									)}
@@ -489,14 +492,15 @@ export function PoliciesPage() {
 									setApplySuccess(false);
 									setApplyError(null);
 								}}
-								className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm bg-[#00c27a] px-3 py-1 font-mono text-[11px] font-semibold text-black transition-colors hover:bg-[#00a866]"
+								className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm bg-[#00c27a] px-3 py-1 font-mono font-semibold text-[11px] text-black transition-colors hover:bg-[#00a866]"
 							>
 								<Play className="size-3" />
 								Generate
 							</button>
 						</div>
 					</div>
-					<FilterBar className="mb-3"
+					<FilterBar
+						className="mb-3"
 						search={search}
 						onSearchChange={setSearch}
 						placeholder="Search policies..."
@@ -871,8 +875,11 @@ export function PoliciesPage() {
 							)}
 						</div>
 					</div>
-			) : selected ? (
-				<div key={selected.name} className="animate-in slide-in-from-right duration-200 p-4">
+				) : selected ? (
+					<div
+						key={selected.name}
+						className="slide-in-from-right animate-in p-4 duration-200"
+					>
 						<div className="mb-4">
 							<div className="mb-1 flex items-center gap-2">
 								<Shield className="size-4 text-muted-foreground" />
