@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { join } from "node:path";
 import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
