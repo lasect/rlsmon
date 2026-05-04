@@ -1,6 +1,7 @@
 {
 	"name": "rlsmon",
 	"version": "0.0.7",
+	"license": "GPL-3.0",
 	"type": "module",
 	"bin": {
 		"rlsmon": "./dist/cli.js"
